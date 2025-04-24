@@ -174,7 +174,7 @@ public class Cart {
         for (CartItem item : items) {
             sb.append(item).append("\n");
         }
-        sb.append("Total: $").append(getTotal());
+        sb.append("Total: RM").append(String.format("%.2f", getTotal()));
         return sb.toString();
     }
 }

@@ -1,14 +1,10 @@
 package gpusellingsystem;
 
-import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 
 public class Main {
-    private static Map<String, User> users = new HashMap<>();
-    private static int nextUserId = 1;
     private static Inventory inventory = new Inventory();
     private static Scanner scanner = new Scanner(System.in);
 
@@ -57,8 +53,15 @@ public class Main {
     }
 
     private static void initializeUsers() {
-        users.put("admin_leong", new Admin(nextUserId++, "admin_leong", "adminpass"));
-        users.put("admin_yap", new Admin(nextUserId++, "admin_yap", "adminpass"));
+        User.loadUsersFromFile(); // Load users from file
+        // If no users were loaded, initialize default admin users
+        if (User.getUsers().isEmpty()) {
+            User.getUsers().put("admin_leong", new Admin(User.getNextUserId(), "admin_leong", "adminpass"));
+            User.incrementNextUserId();
+            User.getUsers().put("admin_yap", new Admin(User.getNextUserId(), "admin_yap", "adminpass"));
+            User.incrementNextUserId();
+            User.saveUsersToFile(); // Save default users to file, creating user_data folder if needed
+        }
     }
 
     private static User handleLogin() {
@@ -67,7 +70,7 @@ public class Main {
         System.out.print("Enter password: ");
         String password = scanner.nextLine();
 
-        User user = users.get(username);
+        User user = User.getUsers().get(username);
         if (user == null || !user.login(password)) {
             System.out.println("Login failed. Invalid username or password.");
             return null;
@@ -80,7 +83,7 @@ public class Main {
     private static void handleCreateAccount() {
         System.out.print("Enter new username: ");
         String username = scanner.nextLine();
-        if (users.containsKey(username)) {
+        if (User.getUsers().containsKey(username)) {
             System.out.println("Username already exists. Please choose a different username.");
             return;
         }
@@ -92,12 +95,14 @@ public class Main {
 
         User user;
         if (joinMember.equals("y")) {
-            user = new Member(nextUserId++, username, password);
+            user = new Member(User.getNextUserId(), username, password);
         } else {
-            user = new NonMember(nextUserId++, username, password);
+            user = new NonMember(User.getNextUserId(), username, password);
         }
-        users.put(username, user);
-        System.out.println("Account created successfully for " + username + " with ID " + (nextUserId - 1));
+        User.incrementNextUserId();
+        User.getUsers().put(username, user);
+        User.saveUsersToFile(); // Save users to file, ensuring user_data folder exists
+        System.out.println("Account created successfully for " + username + " with ID " + (User.getNextUserId() - 1));
     }
 
     private static void handleAdminMenu(Admin admin) {
@@ -125,9 +130,21 @@ public class Main {
                     System.out.print("Enter product name: ");
                     String name = scanner.nextLine();
                     System.out.print("Enter product price: ");
-                    double price = Double.parseDouble(scanner.nextLine());
+                    double price;
+                    try {
+                        price = Double.parseDouble(scanner.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid price. Please enter a valid number.");
+                        continue;
+                    }
                     System.out.print("Enter product quantity: ");
-                    int quantity = Integer.parseInt(scanner.nextLine());
+                    int quantity;
+                    try {
+                        quantity = Integer.parseInt(scanner.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid quantity. Please enter a valid number.");
+                        continue;
+                    }
                     System.out.print("Enter product detail: ");
                     String detail = scanner.nextLine();
                     if (inventory.addProduct(name, price, quantity, detail)) {
@@ -138,7 +155,13 @@ public class Main {
                     break;
                 case 2:
                     System.out.print("Enter product ID to remove: ");
-                    int removeId = Integer.parseInt(scanner.nextLine());
+                    int removeId;
+                    try {
+                        removeId = Integer.parseInt(scanner.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid product ID. Please enter a number.");
+                        continue;
+                    }
                     if (inventory.removeProduct(removeId)) {
                         System.out.println("Product with ID " + removeId + " removed successfully.");
                     } else {
@@ -147,7 +170,13 @@ public class Main {
                     break;
                 case 3:
                     System.out.print("Enter product ID to update: ");
-                    int updateId = Integer.parseInt(scanner.nextLine());
+                    int updateId;
+                    try {
+                        updateId = Integer.parseInt(scanner.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid product ID. Please enter a number.");
+                        continue;
+                    }
                     Product productToUpdate = inventory.getProducts().get(updateId);
                     if (productToUpdate == null) {
                         System.out.println("Product with ID " + updateId + " not found.");
@@ -156,9 +185,21 @@ public class Main {
                     System.out.println("Original name is '" + productToUpdate.getName() + "', enter new name (or press Enter to keep): ");
                     String newName = scanner.nextLine();
                     System.out.println("Original price is 'RM" + productToUpdate.getPrice() + "', enter new price (or -1 to keep): ");
-                    double newPrice = Double.parseDouble(scanner.nextLine());
+                    double newPrice;
+                    try {
+                        newPrice = Double.parseDouble(scanner.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid price. Using existing value.");
+                        newPrice = -1;
+                    }
                     System.out.println("Original quantity is '" + productToUpdate.getQuantity() + "', enter new quantity (or -1 to keep): ");
-                    int newQuantity = Integer.parseInt(scanner.nextLine());
+                    int newQuantity;
+                    try {
+                        newQuantity = Integer.parseInt(scanner.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid quantity. Using existing value.");
+                        newQuantity = -1;
+                    }
                     System.out.println("Original detail is '" + productToUpdate.getDetail() + "', enter new detail (or press Enter to keep): ");
                     String newDetail = scanner.nextLine();
                     inventory.updateProduct(updateId, newName, newPrice, newQuantity, newDetail);
@@ -243,11 +284,23 @@ public class Main {
                     System.out.println("1. Add Item to Cart");
                     System.out.println("2. Back to Main Menu");
                     System.out.print("Choose an action: ");
-                    int productChoice = Integer.parseInt(scanner.nextLine());
+                    int productChoice;
+                    try {
+                        productChoice = Integer.parseInt(scanner.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid input. Please enter a number.");
+                        continue;
+                    }
 
                     if (productChoice == 1) {
                         System.out.print("Enter product ID to add to cart: ");
-                        int productId = Integer.parseInt(scanner.nextLine());
+                        int productId;
+                        try {
+                            productId = Integer.parseInt(scanner.nextLine());
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid product ID. Please enter a number.");
+                            continue;
+                        }
                         Product product = Product.getProduct(productId, inventory);
                         if (product == null) {
                             System.out.println("Product not found! Please check the product ID.");
@@ -255,7 +308,13 @@ public class Main {
                         }
                         System.out.println("Selected: " + product);
                         System.out.print("Enter quantity: ");
-                        int quantity = Integer.parseInt(scanner.nextLine());
+                        int quantity;
+                        try {
+                            quantity = Integer.parseInt(scanner.nextLine());
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid quantity. Please enter a number.");
+                            continue;
+                        }
                         if (quantity <= 0) {
                             System.out.println("Quantity must be greater than 0!");
                             continue;
@@ -284,13 +343,25 @@ public class Main {
                     System.out.println("2. Clear Cart");
                     System.out.println("3. Back to Main Menu");
                     System.out.print("Choose an action: ");
-                    int cartChoice = Integer.parseInt(scanner.nextLine());
+                    int cartChoice;
+                    try {
+                        cartChoice = Integer.parseInt(scanner.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid input. Please enter a number.");
+                        continue;
+                    }
 
                     if (cartChoice == 1) {
                         System.out.println("\nCurrent Cart:");
                         System.out.println(cart);
                         System.out.print("Enter product ID to edit quantity: ");
-                        int productId = Integer.parseInt(scanner.nextLine());
+                        int productId;
+                        try {
+                            productId = Integer.parseInt(scanner.nextLine());
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid product ID. Please enter a number.");
+                            continue;
+                        }
                         Product product = Product.getProduct(productId, inventory);
                         if (product == null || cart.getItems().stream().noneMatch(item -> item.getProduct().getProductId() == productId)) {
                             System.out.println("Product not found in cart!");
@@ -298,7 +369,13 @@ public class Main {
                         }
                         System.out.println("Product stock: " + product.getQuantity());
                         System.out.print("Enter new quantity (0 to remove): ");
-                        int newQuantity = Integer.parseInt(scanner.nextLine());
+                        int newQuantity;
+                        try {
+                            newQuantity = Integer.parseInt(scanner.nextLine());
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid quantity. Please enter a number.");
+                            continue;
+                        }
                         if (!cart.editQuantity(productId, newQuantity, inventory)) {
                             System.out.println("Cannot update quantity: requested quantity exceeds stock (" + product.getQuantity() + ")!");
                             continue;
@@ -332,14 +409,48 @@ public class Main {
                     System.out.println("Your cart is empty! Please add items before checking out.");
                     continue;
                 }
-                System.out.print("Enter order ID for this purchase: ");
-                int orderId = Integer.parseInt(scanner.nextLine());
-                Order order = new Order(orderId, cart);
-                history.addOrder(order);
-                System.out.println("\n=== Order Confirmation ===");
-                System.out.println(order);
-                System.out.println("Thank you for your purchase!");
-                cart.clearCart();
+                // Display the order page with username and cart contents
+                System.out.println("\n=== Order Page ===");
+                System.out.println("Username: " + customer.getUsername());
+                System.out.println("Products in Cart:");
+                System.out.println(cart);
+                
+                // Prompt user to proceed or cancel
+                System.out.println("\n=== Order Actions ===");
+                System.out.println("1. Proceed to Payment");
+                System.out.println("2. Cancel Order");
+                System.out.print("Choose an action (1-2): ");
+                int orderChoice;
+                try {
+                    orderChoice = Integer.parseInt(scanner.nextLine());
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid input. Please enter a number.");
+                    continue;
+                }
+
+                if (orderChoice == 1) {
+                    // Proceed to payment
+                    Order order = new Order(cart, customer);
+                    history.addOrder(order);
+                    System.out.println("\n=== Order Confirmation ===");
+                    System.out.println(order);
+                    // Clear the cart (stock was already deducted when items were added to cart)
+                    cart.clearCart();
+                } else if (orderChoice == 2) {
+                    // Cancel the order and restore stock
+                    List<CartItem> itemsToRestore = new ArrayList<>(cart.getItems());
+                    for (CartItem item : itemsToRestore) {
+                        Product product = Product.getProduct(item.getProduct().getProductId(), inventory);
+                        if (product != null) {
+                            int newStock = product.getQuantity() + item.getQuantity();
+                            inventory.updateProduct(product.getProductId(), null, -1, newStock, null);
+                        }
+                    }
+                    System.out.println("Order cancelled. Items have been returned to inventory.");
+                    // Cart remains intact, no need to clear it
+                } else {
+                    System.out.println("Invalid action! Please choose 1 or 2.");
+                }
             } else if (choice == 4) {
                 System.out.println("\n=== Order History ===");
                 if (history.toString().isEmpty()) {
