@@ -463,7 +463,9 @@ public class Main {
                 inCustomerMenu = false;
                 break;
             } else {
-                System.out.println("Invalid option! Please choose a valid option.");
+                System.out.println("Invalid option! Please choose a valid option！");
+                
+                //!
             }
         }
     }
