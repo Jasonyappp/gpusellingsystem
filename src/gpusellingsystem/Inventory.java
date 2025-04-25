@@ -1,13 +1,13 @@
 package gpusellingsystem;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Inventory {
     private Map<Integer, Product> products = new HashMap<>();
@@ -18,14 +18,14 @@ public class Inventory {
         loadFromFile(); // Load products from file on initialization
         // If the file was empty or didn't exist, initialize with default products
         if (products.isEmpty()) {
-            products.put(1, new Product(1, "RTX1060", 1000.0, 10, "High-performance GPU"));
-            products.put(2, new Product(2, "RTX2050", 20.0, 50, "Entry-level GPU"));
+            products.put(1, new GPU(1, "RTX1060", 1000.0, 10, "High-performance GPU"));
+            products.put(2, new GPU(2, "RTX2050", 20.0, 50, "Entry-level GPU"));
             nextProductId = 3; // Update nextProductId after adding default products
             saveToFile(); // Save the default products to the file
         }
     }
 
-    public boolean addProduct(String name, double price, int quantity, String detail) {
+    public boolean addProduct(String name, double price, int quantity, String detail, String type) {
         if (name == null || name.trim().isEmpty() || price < 0 || quantity < 0 || detail == null || detail.trim().isEmpty()) {
             return false;
         }
@@ -33,7 +33,15 @@ public class Inventory {
         while (products.containsKey(newProductId)) {
             newProductId++;
         }
-        products.put(newProductId, new Product(newProductId, name, price, quantity, detail));
+        Product product;
+        if ("GPU".equalsIgnoreCase(type)) {
+            product = new GPU(newProductId, name, price, quantity, detail);
+        } else if ("CPU".equalsIgnoreCase(type)) {
+            product = new CPU(newProductId, name, price, quantity, detail);
+        } else {
+            return false; // Invalid type
+        }
+        products.put(newProductId, product);
         nextProductId = newProductId + 1;
         saveToFile(); // Save to file after adding a product
         return true;
@@ -47,13 +55,23 @@ public class Inventory {
         return removed;
     }
 
-    public boolean updateProduct(int productId, String newName, double newPrice, int newQuantity, String newDetail) {
+    public boolean updateProduct(int productId, String name, double price, int quantity, String detail) {
         Product product = products.get(productId);
-        if (product == null) return false;
-        if (newName != null && !newName.isEmpty()) product.setName(newName);
-        if (newPrice >= 0) product.setPrice(newPrice);
-        if (newQuantity >= 0) product.setQuantity(newQuantity);
-        if (newDetail != null && !newDetail.isEmpty()) product.setDetail(newDetail);
+        if (product == null) {
+            return false;
+        }
+        if (name != null && !name.trim().isEmpty()) {
+            product.setName(name);
+        }
+        if (price >= 0) {
+            product.setPrice(price);
+        }
+        if (quantity >= 0) {
+            product.setQuantity(quantity);
+        }
+        if (detail != null && !detail.trim().isEmpty()) {
+            product.setDetail(detail);
+        }
         saveToFile(); // Save to file after updating a product
         return true;
     }
@@ -81,7 +99,7 @@ public class Inventory {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
-                if (parts.length != 5) {
+                if (parts.length != 6) { // Now expecting 6 fields including type
                     continue; // Skip malformed lines
                 }
                 try {
@@ -90,7 +108,16 @@ public class Inventory {
                     double price = Double.parseDouble(parts[2]);
                     int quantity = Integer.parseInt(parts[3]);
                     String detail = parts[4];
-                    products.put(productId, new Product(productId, name, price, quantity, detail));
+                    String type = parts[5];
+                    Product product;
+                    if ("GPU".equalsIgnoreCase(type)) {
+                        product = new GPU(productId, name, price, quantity, detail);
+                    } else if ("CPU".equalsIgnoreCase(type)) {
+                        product = new CPU(productId, name, price, quantity, detail);
+                    } else {
+                        continue; // Skip invalid types
+                    }
+                    products.put(productId, product);
                     // Update nextProductId to be higher than the largest productId
                     if (productId >= nextProductId) {
                         nextProductId = productId + 1;
@@ -116,8 +143,8 @@ public class Inventory {
 
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_PATH))) {
                 for (Product p : products.values()) {
-                    writer.write(String.format("%d,%s,%.2f,%d,%s",
-                            p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail()));
+                    writer.write(String.format("%d,%s,%.2f,%d,%s,%s",
+                            p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(), p.getClass().getSimpleName()));
                     writer.newLine();
                 }
             }

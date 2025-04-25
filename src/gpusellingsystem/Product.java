@@ -3,7 +3,7 @@ package gpusellingsystem;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Product {
+public abstract class Product {
     private int productId;
     private String name;
     private double price;
@@ -15,7 +15,15 @@ public class Product {
         this.name = name;
         this.price = price;
         this.quantity = quantity;
-        this.detail = detail != null ? detail : "No detail available";
+        this.detail = detail;
+    }
+
+    public static Product getProduct(int productId, Inventory inventory) {
+        return inventory.getProducts().get(productId);
+    }
+
+    public static List<Product> getAllProducts(Inventory inventory) {
+        return new ArrayList<>(inventory.getProducts().values());
     }
 
     public int getProductId() {
@@ -54,17 +62,9 @@ public class Product {
         this.detail = detail;
     }
 
-    public static Product getProduct(int productId, Inventory inventory) {
-        return inventory.getProducts().get(productId);
-    }
-
-    public static List<Product> getAllProducts(Inventory inventory) {
-        return new ArrayList<>(inventory.getProducts().values());
-    }
-
     @Override
     public String toString() {
-        return String.format("ID: %d | Name: %s | Price: RM%.2f | Quantity: %d | Detail: %s",
-                productId, name, price, quantity, detail);
+        return String.format("ID: %d, Name: %s, Price: RM%.1f, Quantity: %d, Detail: %s, Type: %s",
+                productId, name, price, quantity, detail, this.getClass().getSimpleName());
     }
 }

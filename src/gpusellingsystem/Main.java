@@ -53,31 +53,101 @@ public class Main {
     }
 
     private static void initializeUsers() {
-        User.loadUsersFromFile(); // Load users from file
-        // If no users were loaded, initialize default admin users
+        User.loadUsersFromFile();
         if (User.getUsers().isEmpty()) {
             User.getUsers().put("admin_leong", new Admin(User.getNextUserId(), "admin_leong", "adminpass"));
             User.incrementNextUserId();
             User.getUsers().put("admin_yap", new Admin(User.getNextUserId(), "admin_yap", "adminpass"));
             User.incrementNextUserId();
-            User.saveUsersToFile(); // Save default users to file, creating user_data folder if needed
+            User.saveUsersToFile();
         }
     }
 
     private static User handleLogin() {
         System.out.print("Enter username: ");
         String username = scanner.nextLine();
-        System.out.print("Enter password: ");
-        String password = scanner.nextLine();
-
         User user = User.getUsers().get(username);
-        if (user == null || !user.login(password)) {
-            System.out.println("Login failed. Invalid username or password.");
+        if (user == null) {
+            System.out.println("Login failed. Invalid username.");
             return null;
         }
 
-        System.out.println("Logged in as " + username + ".");
-        return user;
+        if (!(user instanceof Customer)) {
+            System.out.print("Enter password: ");
+            String password = scanner.nextLine();
+            if (user.login(password)) {
+                System.out.println("Logged in as " + username + ".");
+                return user;
+            } else {
+                System.out.println("Login failed. Invalid password.");
+                return null;
+            }
+        }
+
+        System.out.print("Enter password: ");
+        String password = scanner.nextLine();
+        if (user.isLockedOut()) {
+            long remainingSeconds = user.getRemainingLockoutSeconds();
+            System.out.println("Account is locked. " + remainingSeconds + " seconds remaining.");
+            System.out.print("Do you want to reset password? (y/n): ");
+            String resetChoice = scanner.nextLine().toLowerCase();
+            if (resetChoice.equals("y")) {
+                System.out.print("Enter new password: ");
+                String newPassword = scanner.nextLine();
+                if (newPassword.isEmpty()) {
+                    System.out.println("Password cannot be empty. Reset cancelled.");
+                    return null;
+                }
+                System.out.print("Enter admin username: ");
+                String adminUsername = scanner.nextLine();
+                System.out.print("Enter admin password: ");
+                String adminPassword = scanner.nextLine();
+                if (User.authenticateAdmin(adminUsername, adminPassword)) {
+                    user.resetPassword(newPassword);
+                    System.out.println("Password reset successfully. Please log in again.");
+                    return null;
+                } else {
+                    System.out.println("Admin authentication failed. Password reset cancelled.");
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        if (user.login(password)) {
+            System.out.println("Logged in as " + username + ".");
+            return user;
+        } else {
+            System.out.println("Login failed. Invalid password. Attempts: " + user.getFailedLoginAttempts() + "/3");
+            if (user.getFailedLoginAttempts() >= 3) {
+                long remainingSeconds = user.getRemainingLockoutSeconds();
+                System.out.println("Account is locked. " + remainingSeconds + " seconds remaining.");
+                System.out.print("Do you want to reset password? (y/n): ");
+                String resetChoice = scanner.nextLine().toLowerCase();
+                if (resetChoice.equals("y")) {
+                    System.out.print("Enter new password: ");
+                    String newPassword = scanner.nextLine();
+                    if (newPassword.isEmpty()) {
+                        System.out.println("Password cannot be empty. Reset cancelled.");
+                        return null;
+                    }
+                    System.out.print("Enter admin username: ");
+                    String adminUsername = scanner.nextLine();
+                    System.out.print("Enter admin password: ");
+                    String adminPassword = scanner.nextLine();
+                    if (User.authenticateAdmin(adminUsername, adminPassword)) {
+                        user.resetPassword(newPassword);
+                        System.out.println("Password reset successfully. Please log in again.");
+                        return null;
+                    } else {
+                        System.out.println("Admin authentication failed. Password reset cancelled.");
+                        return null;
+                    }
+                }
+                return null;
+            }
+            return null;
+        }
     }
 
     private static void handleCreateAccount() {
@@ -101,7 +171,7 @@ public class Main {
         }
         User.incrementNextUserId();
         User.getUsers().put(username, user);
-        User.saveUsersToFile(); // Save users to file, ensuring user_data folder exists
+        User.saveUsersToFile();
         System.out.println("Account created successfully for " + username + " with ID " + (User.getNextUserId() - 1));
     }
 
@@ -127,6 +197,8 @@ public class Main {
 
             switch (choice) {
                 case 1:
+                    System.out.print("Enter product type (GPU/CPU): ");
+                    String type = scanner.nextLine();
                     System.out.print("Enter product name: ");
                     String name = scanner.nextLine();
                     System.out.print("Enter product price: ");
@@ -147,10 +219,10 @@ public class Main {
                     }
                     System.out.print("Enter product detail: ");
                     String detail = scanner.nextLine();
-                    if (inventory.addProduct(name, price, quantity, detail)) {
+                    if (inventory.addProduct(name, price, quantity, detail, type)) {
                         System.out.println("Product added successfully.");
                     } else {
-                        System.out.println("Failed to add product. Check input values.");
+                        System.out.println("Failed to add product. Check input values or type (must be GPU or CPU).");
                     }
                     break;
                 case 2:
@@ -184,7 +256,7 @@ public class Main {
                     }
                     System.out.println("Original name is '" + productToUpdate.getName() + "', enter new name (or press Enter to keep): ");
                     String newName = scanner.nextLine();
-                    System.out.println("Original price is 'RM" + productToUpdate.getPrice() + "', enter new price (or -1 to keep): ");
+                    System.out.println("Original price is 'RM" + productToUpdate.getPrice() + "', enter new price (or Enter to keep): ");
                     double newPrice;
                     try {
                         newPrice = Double.parseDouble(scanner.nextLine());
@@ -192,7 +264,7 @@ public class Main {
                         System.out.println("Invalid price. Using existing value.");
                         newPrice = -1;
                     }
-                    System.out.println("Original quantity is '" + productToUpdate.getQuantity() + "', enter new quantity (or -1 to keep): ");
+                    System.out.println("Original quantity is '" + productToUpdate.getQuantity() + "', enter new quantity (or Enter to keep): ");
                     int newQuantity;
                     try {
                         newQuantity = Integer.parseInt(scanner.nextLine());
@@ -220,11 +292,11 @@ public class Main {
                     if (inventory.getProducts().isEmpty()) {
                         System.out.println("No products available.");
                     } else {
-                        System.out.printf("%-8s%-20s%-15s%-15s%-30s%n", "ID", "Name", "Price", "Quantity", "Detail");
-                        System.out.printf("%-8s%-20s%-15s%-15s%-30s%n", "--", "--------------------", "---------------", "---------------", "------------------------------");
+                        System.out.printf("%-8s%-20s%-15s%-15s%-30s%-10s%n", "ID", "Name", "Price", "Quantity", "Detail", "Type");
+                        System.out.printf("%-8s%-20s%-15s%-15s%-30s%-10s%n", "--", "--------------------", "---------------", "---------------", "------------------------------", "----------");
                         for (Product p : inventory.getProducts().values()) {
-                            System.out.printf("%-8d%-20sRM%-14.1f%-15d%-30s%n", 
-                                p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail());
+                            System.out.printf("%-8d%-20sRM%-14.1f%-15d%-30s%-10s%n", 
+                                p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(), p.getClass().getSimpleName());
                         }
                     }
                     break;
@@ -264,70 +336,103 @@ public class Main {
             }
 
             if (choice == 1) {
-                while (true) {
-                    System.out.println("\n=== Available Products ===");
-                    List<Product> products = Product.getAllProducts(inventory);
-                    if (products.isEmpty()) {
-                        System.out.println("No products available!");
-                        break;
-                    }
-                    System.out.printf("%-8s%-20s%-15s%-15s%-30s%-15s%n", 
-                        "ID", "Name", "Price", "Quantity", "Detail", "After Discount");
-                    System.out.printf("%-8s%-20s%-15s%-15s%-30s%-15s%n", 
-                        "--", "--------------------", "---------------", "---------------", "------------------------------", "---------------");
-                    for (Product p : products) {
-                        double discountedPrice = p.getPrice() * (1 - customer.getDiscount());
-                        System.out.printf("%-8d%-20sRM%-14.1f%-15d%-30sRM%-14.1f%n", 
-                            p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(), discountedPrice);
-                    }
-                    System.out.println("\n=== Product Actions ===");
-                    System.out.println("1. Add Item to Cart");
-                    System.out.println("2. Back to Main Menu");
-                    System.out.print("Choose an action: ");
-                    int productChoice;
+                boolean inViewProductsMenu = true;
+                while (inViewProductsMenu) {
+                    System.out.println("\n=== View Products ===");
+                    System.out.println("1. View GPU Products");
+                    System.out.println("2. View CPU Products");
+                    System.out.println("3. Back to Main Menu");
+                    System.out.print("Choose an option: ");
+                    int viewChoice;
                     try {
-                        productChoice = Integer.parseInt(scanner.nextLine());
+                        viewChoice = Integer.parseInt(scanner.nextLine());
                     } catch (NumberFormatException e) {
                         System.out.println("Invalid input. Please enter a number.");
                         continue;
                     }
 
-                    if (productChoice == 1) {
-                        System.out.print("Enter product ID to add to cart: ");
-                        int productId;
+                    if (viewChoice == 1 || viewChoice == 2) {
+                        List<Product> filteredProducts = new ArrayList<>();
+                        String type = viewChoice == 1 ? "GPU" : "CPU";
+                        for (Product p : Product.getAllProducts(inventory)) {
+                            if ((viewChoice == 1 && p instanceof GPU) || (viewChoice == 2 && p instanceof CPU)) {
+                                filteredProducts.add(p);
+                            }
+                        }
+
+                        System.out.println("\n=== " + type + " Products ===");
+                        if (filteredProducts.isEmpty()) {
+                            System.out.println("No " + type + " products available!");
+                        } else {
+                            System.out.printf("%-8s%-20s%-15s%-15s%-30s%-15s%-15s%n", 
+                                "ID", "Name", "Price", "Quantity", "Detail", "Type", "After Discount");
+                            System.out.printf("%-8s%-20s%-15s%-15s%-30s%-15s%-15s%n", 
+                                "--", "--------------------", "---------------", "---------------", "------------------------------", "---------------", "---------------");
+                            for (Product p : filteredProducts) {
+                                double discountedPrice = p.getPrice() * (1 - customer.getDiscount());
+                                System.out.printf("%-8d%-20sRM%-14.1f%-15d%-30s%-15sRM%-14.1f%n", 
+                                    p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(), 
+                                    p.getClass().getSimpleName(), discountedPrice);
+                            }
+                        }
+
+                        System.out.println("\n=== Product Actions ===");
+                        System.out.println("1. Add Item to Cart");
+                        System.out.println("2. Back to View Products Menu");
+                        System.out.print("Choose an action: ");
+                        int productChoice;
                         try {
-                            productId = Integer.parseInt(scanner.nextLine());
+                            productChoice = Integer.parseInt(scanner.nextLine());
                         } catch (NumberFormatException e) {
-                            System.out.println("Invalid product ID. Please enter a number.");
+                            System.out.println("Invalid input. Please enter a number.");
                             continue;
                         }
-                        Product product = Product.getProduct(productId, inventory);
-                        if (product == null) {
-                            System.out.println("Product not found! Please check the product ID.");
+
+                        if (productChoice == 1) {
+                            System.out.print("Enter product ID to add to cart: ");
+                            int productId;
+                            try {
+                                productId = Integer.parseInt(scanner.nextLine());
+                            } catch (NumberFormatException e) {
+                                System.out.println("Invalid product ID. Please enter a number.");
+                                continue;
+                            }
+                            Product product = Product.getProduct(productId, inventory);
+                            if (product == null) {
+                                System.out.println("Product not found! Please check the product ID.");
+                                continue;
+                            }
+                            if ((viewChoice == 1 && !(product instanceof GPU)) || (viewChoice == 2 && !(product instanceof CPU))) {
+                                System.out.println("Product ID does not match the selected type (" + type + ")!");
+                                continue;
+                            }
+                            System.out.println("Selected: " + product);
+                            System.out.print("Enter quantity: ");
+                            int quantity;
+                            try {
+                                quantity = Integer.parseInt(scanner.nextLine());
+                            } catch (NumberFormatException e) {
+                                System.out.println("Invalid quantity. Please enter a number.");
+                                continue;
+                            }
+                            if (quantity <= 0) {
+                                System.out.println("Quantity must be greater than 0!");
+                                continue;
+                            }
+                            if (!cart.addItem(product, quantity, inventory)) {
+                                System.out.println("Cannot add to cart: requested quantity exceeds stock (" + product.getQuantity() + ")!");
+                                continue;
+                            }
+                            System.out.println("Successfully added to cart!");
+                        } else if (productChoice == 2) {
                             continue;
+                        } else {
+                            System.out.println("Invalid action! Please choose a valid option.");
                         }
-                        System.out.println("Selected: " + product);
-                        System.out.print("Enter quantity: ");
-                        int quantity;
-                        try {
-                            quantity = Integer.parseInt(scanner.nextLine());
-                        } catch (NumberFormatException e) {
-                            System.out.println("Invalid quantity. Please enter a number.");
-                            continue;
-                        }
-                        if (quantity <= 0) {
-                            System.out.println("Quantity must be greater than 0!");
-                            continue;
-                        }
-                        if (!cart.addItem(product, quantity, inventory)) {
-                            System.out.println("Cannot add to cart: requested quantity exceeds stock (" + product.getQuantity() + ")!");
-                            continue;
-                        }
-                        System.out.println("Successfully added to cart!");
-                    } else if (productChoice == 2) {
-                        break;
+                    } else if (viewChoice == 3) {
+                        inViewProductsMenu = false;
                     } else {
-                        System.out.println("Invalid action! Please choose a valid option.");
+                        System.out.println("Invalid option! Please choose 1, 2, or 3.");
                     }
                 }
             } else if (choice == 2) {
@@ -386,10 +491,8 @@ public class Main {
                             System.out.println("Quantity updated successfully.");
                         }
                     } else if (cartChoice == 2) {
-                        // Store items before clearing to restore stock
                         List<CartItem> itemsToClear = new ArrayList<>(cart.getItems());
                         cart.clearCart();
-                        // Restore stock for each item in the cart
                         for (CartItem item : itemsToClear) {
                             Product product = Product.getProduct(item.getProduct().getProductId(), inventory);
                             if (product != null) {
@@ -409,13 +512,11 @@ public class Main {
                     System.out.println("Your cart is empty! Please add items before checking out.");
                     continue;
                 }
-                // Display the order page with username and cart contents
                 System.out.println("\n=== Order Page ===");
                 System.out.println("Username: " + customer.getUsername());
                 System.out.println("Products in Cart:");
                 System.out.println(cart);
                 
-                // Prompt user to proceed or cancel
                 System.out.println("\n=== Order Actions ===");
                 System.out.println("1. Proceed to Payment");
                 System.out.println("2. Cancel Order");
@@ -429,15 +530,12 @@ public class Main {
                 }
 
                 if (orderChoice == 1) {
-                    // Proceed to payment
                     Order order = new Order(cart, customer);
                     history.addOrder(order);
                     System.out.println("\n=== Order Confirmation ===");
                     System.out.println(order);
-                    // Clear the cart (stock was already deducted when items were added to cart)
                     cart.clearCart();
                 } else if (orderChoice == 2) {
-                    // Cancel the order and restore stock
                     List<CartItem> itemsToRestore = new ArrayList<>(cart.getItems());
                     for (CartItem item : itemsToRestore) {
                         Product product = Product.getProduct(item.getProduct().getProductId(), inventory);
@@ -447,7 +545,6 @@ public class Main {
                         }
                     }
                     System.out.println("Order cancelled. Items have been returned to inventory.");
-                    // Cart remains intact, no need to clear it
                 } else {
                     System.out.println("Invalid action! Please choose 1 or 2.");
                 }
@@ -463,9 +560,7 @@ public class Main {
                 inCustomerMenu = false;
                 break;
             } else {
-                System.out.println("Invalid option! Please choose a valid option！");
-                
-              // testing001
+                System.out.println("Invalid option! Please choose a valid option!");
             }
         }
     }

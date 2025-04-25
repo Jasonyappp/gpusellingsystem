@@ -133,7 +133,7 @@ public class Cart {
                 double price = Double.parseDouble(parts[2]);
                 int quantity = Integer.parseInt(parts[3]);
                 // Create a Product instance (we don't need inventory here since we're just displaying)
-                Product product = new Product(productId, name, price, 0, "Loaded from cart");
+                Product product = new Product(productId, name, price, 0, "Loaded from cart") {};
                 items.add(new CartItem(product, quantity));
             }
         } catch (IOException | NumberFormatException e) {

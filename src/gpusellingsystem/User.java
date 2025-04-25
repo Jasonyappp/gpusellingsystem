@@ -14,6 +14,8 @@ public abstract class User {
     private String username;
     private String password;
     private boolean isLoggedIn;
+    private int failedLoginAttempts; // 密码错误次数（不持久化）
+    private long lockoutTimestamp; // 锁定时间戳（不持久化）
     private static Map<String, User> users = new HashMap<>();
     private static int nextUserId = 1;
     private static final String USERS_FILE_PATH = "user_data/users.txt";
@@ -23,21 +25,23 @@ public abstract class User {
         this.username = username;
         this.password = password;
         this.isLoggedIn = false;
+        this.failedLoginAttempts = 0;
+        this.lockoutTimestamp = 0;
     }
 
-    // Static method to load users from file
+    // Static method to load users from file（保持原样）
     public static void loadUsersFromFile() {
-        users.clear(); // Clear current users to avoid duplicates
+        users.clear();
         File file = new File(USERS_FILE_PATH);
         if (!file.exists()) {
-            return; // File doesn't exist, will initialize with default users
+            return;
         }
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
                 if (parts.length != 5) {
-                    continue; // Skip malformed lines
+                    continue;
                 }
                 try {
                     int userId = Integer.parseInt(parts[0]);
@@ -57,12 +61,11 @@ public abstract class User {
                         }
                     }
                     users.put(username, user);
-                    // Update nextUserId to be higher than the largest userId
                     if (userId >= nextUserId) {
                         nextUserId = userId + 1;
                     }
                 } catch (NumberFormatException e) {
-                    continue; // Skip lines with parsing errors
+                    continue;
                 }
             }
         } catch (IOException e) {
@@ -70,14 +73,13 @@ public abstract class User {
         }
     }
 
-    // Static method to save users to file
+    // Static method to save users to file（保持原样）
     public static void saveUsersToFile() {
         try {
-            // Create user_data folder if it doesn't exist
             File dir = new File("user_data");
             if (!dir.exists()) {
                 if (!dir.mkdirs()) {
-                    return; // Silently handle directory creation failure
+                    return;
                 }
             }
 
@@ -105,7 +107,7 @@ public abstract class User {
         return nextUserId;
     }
 
-    // Method to increment nextUserId (used when creating a new user)
+    // Method to increment nextUserId
     public static void incrementNextUserId() {
         nextUserId++;
     }
@@ -126,12 +128,67 @@ public abstract class User {
         return isLoggedIn;
     }
 
+    public int getFailedLoginAttempts() {
+        return failedLoginAttempts;
+    }
+
+    // 检查是否被锁定
+    public boolean isLockedOut() {
+        if (lockoutTimestamp == 0) {
+            return false;
+        }
+        long currentTime = System.currentTimeMillis();
+        if (currentTime >= lockoutTimestamp + 60_000) {
+            lockoutTimestamp = 0; // 自动解锁
+            failedLoginAttempts = 0;
+            return false;
+        }
+        return true;
+    }
+
+    // 获取剩余锁定时间（秒）
+    public long getRemainingLockoutSeconds() {
+        if (!isLockedOut()) {
+            return 0;
+        }
+        long currentTime = System.currentTimeMillis();
+        return (lockoutTimestamp + 60_000 - currentTime) / 1000;
+    }
+
+    // 管理员认证
+    public static boolean authenticateAdmin(String adminUsername, String adminPassword) {
+        User admin = users.get(adminUsername);
+        if (admin == null || !admin.isAdmin()) {
+            return false;
+        }
+        return admin.getPassword().equals(adminPassword);
+    }
+
+    // 登录方法，包含错误计数和锁定逻辑
     public boolean login(String inputPassword) {
+        if (isLockedOut()) {
+            return false; // 锁定状态由Main.handleLogin处理
+        }
+
         if (this.password.equals(inputPassword)) {
             this.isLoggedIn = true;
+            this.failedLoginAttempts = 0; // 登录成功，重置错误计数
             return true;
+        } else {
+            this.failedLoginAttempts++;
+            if (this.failedLoginAttempts >= 3) {
+                this.lockoutTimestamp = System.currentTimeMillis(); // 设置锁定时间
+            }
+            return false;
         }
-        return false;
+    }
+
+    // 重置密码
+    public void resetPassword(String newPassword) {
+        this.password = newPassword;
+        this.failedLoginAttempts = 0;
+        this.lockoutTimestamp = 0;
+        saveUsersToFile(); // 更新文件中的密码
     }
 
     public void logout() {
@@ -141,6 +198,6 @@ public abstract class User {
     public abstract boolean isAdmin();
 
     public double getDiscount() {
-        return 0.0; // 默认无折扣
+        return 0.0;
     }
 }
