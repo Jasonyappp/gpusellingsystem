@@ -3,6 +3,8 @@ package gpusellingsystem;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Main {
     private static Inventory inventory = new Inventory();
@@ -160,7 +162,7 @@ public class Main {
 
         System.out.print("Enter new password: ");
         String password = scanner.nextLine();
-        System.out.print("Do you want to join member? (y/n): ");
+        System.out.print("Do you want to join as a member? (y/n): ");
         String joinMember = scanner.nextLine().toLowerCase();
 
         User user;
@@ -256,7 +258,7 @@ public class Main {
                     }
                     System.out.println("Original name is '" + productToUpdate.getName() + "', enter new name (or press Enter to keep): ");
                     String newName = scanner.nextLine();
-                    System.out.println("Original price is 'RM" + productToUpdate.getPrice() + "', enter new price (or Enter to keep): ");
+                    System.out.println("Original price is 'RM" + productToUpdate.getPrice() + "', enter new price (or -1 to keep): ");
                     double newPrice;
                     try {
                         newPrice = Double.parseDouble(scanner.nextLine());
@@ -264,7 +266,7 @@ public class Main {
                         System.out.println("Invalid price. Using existing value.");
                         newPrice = -1;
                     }
-                    System.out.println("Original quantity is '" + productToUpdate.getQuantity() + "', enter new quantity (or Enter to keep): ");
+                    System.out.println("Original quantity is '" + productToUpdate.getQuantity() + "', enter new quantity (or -1 to keep): ");
                     int newQuantity;
                     try {
                         newQuantity = Integer.parseInt(scanner.nextLine());
@@ -292,11 +294,14 @@ public class Main {
                     if (inventory.getProducts().isEmpty()) {
                         System.out.println("No products available.");
                     } else {
-                        System.out.printf("%-8s%-20s%-15s%-15s%-30s%-10s%n", "ID", "Name", "Price", "Quantity", "Detail", "Type");
-                        System.out.printf("%-8s%-20s%-15s%-15s%-30s%-10s%n", "--", "--------------------", "---------------", "---------------", "------------------------------", "----------");
+                        System.out.printf("%-8s%-20s%-15s%-15s%-30s%-10s%n", 
+                            "ID", "Name", "Price", "Quantity", "Detail", "Type");
+                        System.out.printf("%-8s%-20s%-15s%-15s%-30s%-10s%n", 
+                            "--", "--------------------", "---------------", "---------------", "------------------------------", "----------");
                         for (Product p : inventory.getProducts().values()) {
                             System.out.printf("%-8d%-20sRM%-14.1f%-15d%-30s%-10s%n", 
-                                p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(), p.getClass().getSimpleName());
+                                p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(), 
+                                p.getClass().getSimpleName());
                         }
                     }
                     break;
@@ -312,12 +317,9 @@ public class Main {
 
     private static void handleCustomerMenu(Customer customer, Inventory inventory) {
         Cart cart = new Cart(customer.getUsername());
-        OrderHistory history = new OrderHistory();
+        OrderHistory history = new OrderHistory(customer.getUsername());
 
-        System.out.println("=====================================");
-        System.out.println("Welcome to GPU/CPU Shop!");
-        System.out.println("=====================================");
-
+        System.out.println("\n=== Welcome to GPU/CPU Shop ===");
         boolean inCustomerMenu = true;
         while (inCustomerMenu && customer.isLoggedIn()) {
             System.out.println("\n=== Main Menu ===");
@@ -326,7 +328,7 @@ public class Main {
             System.out.println("3. Checkout");
             System.out.println("4. View Order History");
             System.out.println("5. Logout");
-            System.out.print("Please choose an option: ");
+            System.out.print("Choose an option: ");
             int choice;
             try {
                 choice = Integer.parseInt(scanner.nextLine());
@@ -512,12 +514,28 @@ public class Main {
                     System.out.println("Your cart is empty! Please add items before checking out.");
                     continue;
                 }
-                System.out.println("\n=== Order Page ===");
+                System.out.println("\n=== Order Summary ===");
                 System.out.println("Username: " + customer.getUsername());
-                System.out.println("Products in Cart:");
+                System.out.println("Items in Cart:");
                 System.out.println(cart);
-                
-                System.out.println("\n=== Order Actions ===");
+                Order order;
+                try {
+                    order = new Order(cart, customer);
+                } catch (RuntimeException e) {
+                    System.out.println("Error creating order: " + e.getMessage());
+                    continue;
+                }
+                System.out.println("Total (Before Discount): RM " + String.format("%.2f", order.getTotal()));
+                System.out.println("Member Discount: " + String.format("%.1f%%", (1 - order.getDiscountedTotal() / order.getTotal()) * 100));
+                System.out.println("Total (After Discount): RM " + String.format("%.2f", order.getDiscountedTotal()));
+
+                System.out.print("Confirm order? (y/n): ");
+                if (!scanner.nextLine().trim().toLowerCase().equals("y")) {
+                    System.out.println("Order cancelled. Returning to menu.");
+                    continue;
+                }
+
+                System.out.println("\n=== Payment Options ===");
                 System.out.println("1. Proceed to Payment");
                 System.out.println("2. Cancel Order");
                 System.out.print("Choose an action (1-2): ");
@@ -530,39 +548,126 @@ public class Main {
                 }
 
                 if (orderChoice == 1) {
-                    Order order = new Order(cart, customer);
-                    history.addOrder(order);
-                    System.out.println("\n=== Order Confirmation ===");
-                    System.out.println(order);
-                    cart.clearCart();
-                } else if (orderChoice == 2) {
-                    List<CartItem> itemsToRestore = new ArrayList<>(cart.getItems());
-                    for (CartItem item : itemsToRestore) {
-                        Product product = Product.getProduct(item.getProduct().getProductId(), inventory);
-                        if (product != null) {
-                            int newStock = product.getQuantity() + item.getQuantity();
-                            inventory.updateProduct(product.getProductId(), null, -1, newStock, null);
+                    boolean paymentCompleted = false;
+                    while (!paymentCompleted) {
+                        System.out.println("\n=== Payment ===");
+                        System.out.println("Available methods: Online Banking, Cash on Delivery");
+                        System.out.print("Enter payment method (OnlineBanking/CODPayment): ");
+                        String paymentMethod = scanner.nextLine().trim();
+                        System.out.print("Enter payment amount (RM): ");
+                        double paymentAmount;
+                        try {
+                            paymentAmount = Double.parseDouble(scanner.nextLine());
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid amount. Please enter a valid number.");
+                            continue;
+                        }
+
+                        PaymentMethod paymentProcessor;
+                        Map<String, String> details = new HashMap<>();
+                        PaymentMethod.PaymentResult result = null;
+
+                        if (paymentMethod.equalsIgnoreCase("OnlineBanking")) {
+                            paymentProcessor = new OnlineBankingPayment();
+                            System.out.println("\n=== Online Banking ===");
+                            System.out.println("Available banks: Maybank, CIMB, Public Bank");
+                            System.out.print("Enter bank name: ");
+                            String bankName = scanner.nextLine().trim();
+                            System.out.print("Enter bank username: ");
+                            String bankUsername = scanner.nextLine().trim();
+                            System.out.print("Enter bank password: ");
+                            String bankPassword = scanner.nextLine().trim();
+                            System.out.print("Confirm payment? (Yes/Later): ");
+                            String confirm = scanner.nextLine().trim().toLowerCase();
+                            if (confirm.equals("yes")) {
+                                details.put("bankName", bankName);
+                                details.put("bankUsername", bankUsername);
+                                details.put("bankPassword", bankPassword);
+                                result = paymentProcessor.processPayment(order, paymentAmount, details);
+                            } else if (confirm.equals("later")) {
+                                System.out.println("Payment cancelled. Returning to payment selection.");
+                                continue;
+                            } else {
+                                System.out.println("Invalid input. Please enter 'Yes' or 'Later'.");
+                                continue;
+                            }
+                        } else if (paymentMethod.equalsIgnoreCase("CODPayment")) {
+                            paymentProcessor = new CODPayment();
+                            System.out.println("\n=== Cash on Delivery ===");
+                            System.out.print("Enter delivery address: ");
+                            String deliveryAddress = scanner.nextLine().trim();
+                            System.out.print("Enter contact information (e.g., phone number): ");
+                            String contactInfo = scanner.nextLine().trim();
+                            details.put("deliveryAddress", deliveryAddress);
+                            details.put("contactInfo", contactInfo);
+                            result = paymentProcessor.processPayment(order, paymentAmount, details);
+                        } else {
+                            System.out.println("Invalid payment method. Please select OnlineBanking or CODPayment.");
+                            continue;
+                        }
+
+                        try {
+                            if (result.isSuccess()) {
+                                history.addOrder(order);
+                                System.out.println("\n=== Order Confirmation ===");
+                                System.out.println(order);
+                                System.out.println("\n=== Payment Result ===");
+                                System.out.println(result.getMessage());
+                                System.out.println("\n" + result.getInvoice().toFormattedString());
+                                cart.clearCart();
+                                paymentCompleted = true;
+                            } else {
+                                System.out.println("Payment failed: " + result.getMessage());
+                                System.out.print("Retry payment? (y/n): ");
+                                if (!scanner.nextLine().trim().toLowerCase().equals("y")) {
+                                    System.out.println("Order retained in cart. You can retry later.");
+                                    paymentCompleted = true;
+                                }
+                            }
+                        } catch (RuntimeException e) {
+                            System.out.println("Error processing payment or saving order: " + e.getMessage());
+                            System.out.print("Retry payment? (y/n): ");
+                            if (!scanner.nextLine().trim().toLowerCase().equals("y")) {
+                                System.out.println("Order retained in cart. You can retry later.");
+                                paymentCompleted = true;
+                            }
                         }
                     }
-                    System.out.println("Order cancelled. Items have been returned to inventory.");
+                } else if (orderChoice == 2) {
+                    List<CartItem> itemsToRestore = new ArrayList<>(cart.getItems());
+                    try {
+                        for (CartItem item : itemsToRestore) {
+                            Product product = Product.getProduct(item.getProduct().getProductId(), inventory);
+                            if (product != null) {
+                                int newStock = product.getQuantity() + item.getQuantity();
+                                inventory.updateProduct(product.getProductId(), null, -1, newStock, null);
+                            }
+                        }
+                        System.out.println("Order cancelled. Items returned to inventory.");
+                    } catch (RuntimeException e) {
+                        System.out.println("Error cancelling order: " + e.getMessage());
+                    }
                 } else {
                     System.out.println("Invalid action! Please choose 1 or 2.");
                 }
             } else if (choice == 4) {
                 System.out.println("\n=== Order History ===");
-                if (history.toString().isEmpty()) {
-                    System.out.println("You have no past orders.");
-                } else {
-                    System.out.println(history);
+                try {
+                    String historyStr = history.toString();
+                    if (historyStr.isEmpty()) {
+                        System.out.println("You have no past orders.");
+                    } else {
+                        System.out.println(historyStr);
+                    }
+                } catch (RuntimeException e) {
+                    System.out.println("Error loading order history: " + e.getMessage());
                 }
             } else if (choice == 5) {
                 customer.logout();
                 inCustomerMenu = false;
-                break;
             } else {
-                System.out.println("Invalid option! Please choose a valid option!");
+                System.out.println("Invalid option! Please choose a valid option.");
             }
         }
     }
 }
-// nihao
