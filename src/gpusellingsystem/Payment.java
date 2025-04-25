@@ -10,4 +10,5 @@ package gpusellingsystem;
  */
 public class Payment {
     
+    
 }
