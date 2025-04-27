@@ -12,7 +12,6 @@ package gpusellingsystem;
  *
  * @author leong
  */
-// 继承：Admin继承User
 public class Admin extends User {
     public Admin(int userId, String username, String password) {
         super(userId, username, password);
