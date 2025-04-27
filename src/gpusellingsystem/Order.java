@@ -58,11 +58,12 @@ public class Order implements Serializable {
         return orderDate;
     }
 
-    // For Invoice.java compatibility
+    // 修改后的 getCart 方法：直接构造 Cart，不触发库存更新
     public Cart getCart() {
         Cart cart = new Cart(username);
+        cart.clearItems(); // 清空默认加载的 items
         for (CartItem item : items) {
-            cart.addItem(item.getProduct(), item.getQuantity(), null); // No inventory update
+            cart.addItemDirectly(new CartItem(item.getProduct(), item.getQuantity()));
         }
         return cart;
     }

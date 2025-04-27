@@ -8,6 +8,7 @@ import java.util.Map;
 
 public class Main {
     private static Inventory inventory = new Inventory();
+    private static UserManager userManager = new UserManager();
     private static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
@@ -17,7 +18,7 @@ public class Main {
         while (running) {
             System.out.println("\n=== Computer Retail Management System ===");
             System.out.println("1. Login");
-            System.out.println("2. Create Account");
+            System.out.println("2. Register"); // 修改为 Register
             System.out.println("3. Exit");
             System.out.print("Enter your choice (1-3): ");
 
@@ -155,6 +156,10 @@ public class Main {
     private static void handleCreateAccount() {
         System.out.print("Enter new username: ");
         String username = scanner.nextLine();
+        if (username.isEmpty()) {
+            System.out.println("Username cannot be empty. Registration cancelled.");
+            return;
+        }
         if (User.getUsers().containsKey(username)) {
             System.out.println("Username already exists. Please choose a different username.");
             return;
@@ -162,6 +167,15 @@ public class Main {
 
         System.out.print("Enter new password: ");
         String password = scanner.nextLine();
+        if (password.isEmpty()) {
+            System.out.println("Password cannot be empty. Registration cancelled.");
+            return;
+        }
+        if (password.length() < 5 || password.length() > 12) {
+            System.out.println("Password must be between 5 and 12 characters. Registration cancelled.");
+            return;
+        }
+
         System.out.print("Do you want to join as a member? (y/n): ");
         String joinMember = scanner.nextLine().toLowerCase();
 
@@ -180,14 +194,11 @@ public class Main {
     private static void handleAdminMenu(Admin admin) {
         boolean inAdminMenu = true;
         while (inAdminMenu && admin.isLoggedIn()) {
-            System.out.println("\n=== Inventory Management System ===");
-            System.out.println("1. Add Product");
-            System.out.println("2. Remove Product");
-            System.out.println("3. Update Product");
-            System.out.println("4. Search Product");
-            System.out.println("5. View Product Listing");
-            System.out.println("6. Logout");
-            System.out.print("Enter your choice (1-6): ");
+            System.out.println("\n=== Admin Page ===");
+            System.out.println("1. Manage Product");
+            System.out.println("2. Manage Customers");
+            System.out.println("3. Logout");
+            System.out.print("Enter your choice (1-3): ");
 
             int choice;
             try {
@@ -198,119 +209,236 @@ public class Main {
             }
 
             switch (choice) {
-                case 1:
-                    System.out.print("Enter product type (GPU/CPU): ");
-                    String type = scanner.nextLine();
-                    System.out.print("Enter product name: ");
-                    String name = scanner.nextLine();
-                    System.out.print("Enter product price: ");
-                    double price;
-                    try {
-                        price = Double.parseDouble(scanner.nextLine());
-                    } catch (NumberFormatException e) {
-                        System.out.println("Invalid price. Please enter a valid number.");
-                        continue;
-                    }
-                    System.out.print("Enter product quantity: ");
-                    int quantity;
-                    try {
-                        quantity = Integer.parseInt(scanner.nextLine());
-                    } catch (NumberFormatException e) {
-                        System.out.println("Invalid quantity. Please enter a valid number.");
-                        continue;
-                    }
-                    System.out.print("Enter product detail: ");
-                    String detail = scanner.nextLine();
-                    if (inventory.addProduct(name, price, quantity, detail, type)) {
-                        System.out.println("Product added successfully.");
-                    } else {
-                        System.out.println("Failed to add product. Check input values or type (must be GPU or CPU).");
-                    }
-                    break;
-                case 2:
-                    System.out.print("Enter product ID to remove: ");
-                    int removeId;
-                    try {
-                        removeId = Integer.parseInt(scanner.nextLine());
-                    } catch (NumberFormatException e) {
-                        System.out.println("Invalid product ID. Please enter a number.");
-                        continue;
-                    }
-                    if (inventory.removeProduct(removeId)) {
-                        System.out.println("Product with ID " + removeId + " removed successfully.");
-                    } else {
-                        System.out.println("Product with ID " + removeId + " not found.");
-                    }
-                    break;
-                case 3:
-                    System.out.print("Enter product ID to update: ");
-                    int updateId;
-                    try {
-                        updateId = Integer.parseInt(scanner.nextLine());
-                    } catch (NumberFormatException e) {
-                        System.out.println("Invalid product ID. Please enter a number.");
-                        continue;
-                    }
-                    Product productToUpdate = inventory.getProducts().get(updateId);
-                    if (productToUpdate == null) {
-                        System.out.println("Product with ID " + updateId + " not found.");
-                        break;
-                    }
-                    System.out.println("Original name is '" + productToUpdate.getName() + "', enter new name (or press Enter to keep): ");
-                    String newName = scanner.nextLine();
-                    System.out.println("Original price is 'RM" + productToUpdate.getPrice() + "', enter new price (or -1 to keep): ");
-                    double newPrice;
-                    try {
-                        newPrice = Double.parseDouble(scanner.nextLine());
-                    } catch (NumberFormatException e) {
-                        System.out.println("Invalid price. Using existing value.");
-                        newPrice = -1;
-                    }
-                    System.out.println("Original quantity is '" + productToUpdate.getQuantity() + "', enter new quantity (or -1 to keep): ");
-                    int newQuantity;
-                    try {
-                        newQuantity = Integer.parseInt(scanner.nextLine());
-                    } catch (NumberFormatException e) {
-                        System.out.println("Invalid quantity. Using existing value.");
-                        newQuantity = -1;
-                    }
-                    System.out.println("Original detail is '" + productToUpdate.getDetail() + "', enter new detail (or press Enter to keep): ");
-                    String newDetail = scanner.nextLine();
-                    inventory.updateProduct(updateId, newName, newPrice, newQuantity, newDetail);
-                    System.out.println("Product with ID " + updateId + " updated successfully.");
-                    break;
-                case 4:
-                    System.out.print("Enter product name to search: ");
-                    String searchName = scanner.nextLine();
-                    Product product = inventory.searchProduct(searchName);
-                    if (product != null) {
-                        System.out.println("Found: " + product);
-                    } else {
-                        System.out.println("Product with name '" + searchName + "' not found.");
-                    }
-                    break;
-                case 5:
-                    System.out.println("\nProduct Listing:");
-                    if (inventory.getProducts().isEmpty()) {
-                        System.out.println("No products available.");
-                    } else {
-                        System.out.printf("%-8s%-20s%-15s%-15s%-30s%-10s%n", 
-                            "ID", "Name", "Price", "Quantity", "Detail", "Type");
-                        System.out.printf("%-8s%-20s%-15s%-15s%-30s%-10s%n", 
-                            "--", "--------------------", "---------------", "---------------", "------------------------------", "----------");
-                        for (Product p : inventory.getProducts().values()) {
-                            System.out.printf("%-8d%-20sRM%-14.1f%-15d%-30s%-10s%n", 
-                                p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(), 
-                                p.getClass().getSimpleName());
+                case 1: // Manage Product
+                    boolean inProductManagementMenu = true;
+                    while (inProductManagementMenu) {
+                        System.out.println("\n=== Manage Product ===");
+                        System.out.println("1. Add Product");
+                        System.out.println("2. Remove Product");
+                        System.out.println("3. Update Product");
+                        System.out.println("4. Search Product");
+                        System.out.println("5. View Product Listing");
+                        System.out.println("6. Back to Admin Page");
+                        System.out.print("Enter your choice (1-6): ");
+
+                        int productChoice;
+                        try {
+                            productChoice = Integer.parseInt(scanner.nextLine());
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid input. Please enter a number.");
+                            continue;
+                        }
+
+                        switch (productChoice) {
+                            case 1: // Add Product
+                                System.out.print("Enter product type (GPU/CPU): ");
+                                String type = scanner.nextLine();
+                                System.out.print("Enter product name: ");
+                                String name = scanner.nextLine();
+                                System.out.print("Enter product price: ");
+                                double price;
+                                try {
+                                    price = Double.parseDouble(scanner.nextLine());
+                                } catch (NumberFormatException e) {
+                                    System.out.println("Invalid price. Please enter a valid number.");
+                                    continue;
+                                }
+                                System.out.print("Enter product quantity: ");
+                                int quantity;
+                                try {
+                                    quantity = Integer.parseInt(scanner.nextLine());
+                                } catch (NumberFormatException e) {
+                                    System.out.println("Invalid quantity. Please enter a valid number.");
+                                    continue;
+                                }
+                                System.out.print("Enter product detail: ");
+                                String detail = scanner.nextLine();
+                                if (inventory.addProduct(name, price, quantity, detail, type)) {
+                                    System.out.println("Product added successfully.");
+                                } else {
+                                    System.out.println("Failed to add product. Check input values or type (must be GPU or CPU).");
+                                }
+                                break;
+                            case 2: // Remove Product
+                                System.out.print("Enter product ID to remove: ");
+                                int removeId;
+                                try {
+                                    removeId = Integer.parseInt(scanner.nextLine());
+                                } catch (NumberFormatException e) {
+                                    System.out.println("Invalid product ID. Please enter a number.");
+                                    continue;
+                                }
+                                if (inventory.removeProduct(removeId)) {
+                                    System.out.println("Product with ID " + removeId + " removed successfully.");
+                                } else {
+                                    System.out.println("Product with ID " + removeId + " not found.");
+                                }
+                                break;
+                            case 3: // Update Product
+                                System.out.print("Enter product ID to update: ");
+                                int updateId;
+                                try {
+                                    updateId = Integer.parseInt(scanner.nextLine());
+                                } catch (NumberFormatException e) {
+                                    System.out.println("Invalid product ID. Please enter a number.");
+                                    continue;
+                                }
+                                Product productToUpdate = inventory.getProducts().get(updateId);
+                                if (productToUpdate == null) {
+                                    System.out.println("Product with ID " + updateId + " not found.");
+                                    break;
+                                }
+                                System.out.println("Original name is '" + productToUpdate.getName() + "', enter new name (or press Enter to keep): ");
+                                String newName = scanner.nextLine();
+                                System.out.println("Original price is 'RM" + productToUpdate.getPrice() + "', enter new price (or -1 to keep): ");
+                                double newPrice;
+                                try {
+                                    newPrice = Double.parseDouble(scanner.nextLine());
+                                } catch (NumberFormatException e) {
+                                    System.out.println("Invalid price. Using existing value.");
+                                    newPrice = -1;
+                                }
+                                System.out.println("Original quantity is '" + productToUpdate.getQuantity() + "', enter new quantity (or -1 to keep): ");
+                                int newQuantity;
+                                try {
+                                    newQuantity = Integer.parseInt(scanner.nextLine());
+                                } catch (NumberFormatException e) {
+                                    System.out.println("Invalid quantity. Using existing value.");
+                                    newQuantity = -1;
+                                }
+                                System.out.println("Original detail is '" + productToUpdate.getDetail() + "', enter new detail (or press Enter to keep): ");
+                                String newDetail = scanner.nextLine();
+                                inventory.updateProduct(updateId, newName, newPrice, newQuantity, newDetail);
+                                System.out.println("Product with ID " + updateId + " updated successfully.");
+                                break;
+                            case 4: // Search Product
+                                System.out.print("Enter product name to search: ");
+                                String searchName = scanner.nextLine();
+                                Product product = inventory.searchProduct(searchName);
+                                if (product != null) {
+                                    System.out.println("Found: " + product);
+                                } else {
+                                    System.out.println("Product with name '" + searchName + "' not found.");
+                                }
+                                break;
+                            case 5: // View Product Listing
+                                System.out.println("\nProduct Listing:");
+                                if (inventory.getProducts().isEmpty()) {
+                                    System.out.println("No products available.");
+                                } else {
+                                    System.out.printf("%-8s%-20s%-15s%-15s%-30s%-10s%n", 
+                                        "ID", "Name", "Price", "Quantity", "Detail", "Type");
+                                    System.out.printf("%-8s%-20s%-15s%-15s%-30s%-10s%n", 
+                                        "--", "--------------------", "---------------", "---------------", "------------------------------", "----------");
+                                    for (Product p : inventory.getProducts().values()) {
+                                        System.out.printf("%-8d%-20sRM%-14.1f%-15d%-30s%-10s%n", 
+                                            p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(), 
+                                            p.getClass().getSimpleName());
+                                    }
+                                }
+                                break;
+                            case 6: // Back to Admin Page
+                                inProductManagementMenu = false;
+                                break;
+                            default:
+                                System.out.println("Invalid choice. Please enter 1, 2, 3, 4, 5, or 6.");
                         }
                     }
                     break;
-                case 6:
+                case 2: // Manage Customers
+                    boolean inCustomerManagementMenu = true;
+                    while (inCustomerManagementMenu) {
+                        System.out.println("\n=== Manage Customers ===");
+                        System.out.println("1. View All Customers");
+                        System.out.println("2. Delete Customer");
+                        System.out.println("3. Update Customer");
+                        System.out.println("4. Search Customer");
+                        System.out.println("5. Back to Admin Page");
+                        System.out.print("Choose an option (1-5): ");
+
+                        int customerManagementChoice;
+                        try {
+                            customerManagementChoice = Integer.parseInt(scanner.nextLine());
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid input. Please enter a number.");
+                            continue;
+                        }
+
+                        switch (customerManagementChoice) {
+                            case 1: // 查看所有客户
+                                List<Customer> customers = userManager.getAllCustomers();
+                                if (customers.isEmpty()) {
+                                    System.out.println("No customers found.");
+                                } else {
+                                    System.out.printf("%-8s%-20s%-20s%-15s%-10s%n", 
+                                        "ID", "Username", "Password", "Type", "Discount");
+                                    System.out.printf("%-8s%-20s%-20s%-15s%-10s%n", 
+                                        "--", "--------------------", "--------------------", "---------------", "----------");
+                                    for (Customer customer : customers) {
+                                        String customerType = customer instanceof Member ? "Member" : "NonMember";
+                                        System.out.printf("%-8d%-20s%-20s%-15s%-10.1f%%%n", 
+                                            customer.getUserId(), customer.getUsername(), customer.getPassword(), 
+                                            customerType, customer.getDiscount() * 100);
+                                    }
+                                }
+                                break;
+                            case 2: // 删除客户
+                                System.out.print("Enter customer username to delete: ");
+                                String deleteUsername = scanner.nextLine();
+                                if (userManager.deleteCustomer(deleteUsername)) {
+                                    System.out.println("Customer '" + deleteUsername + "' deleted successfully.");
+                                } else {
+                                    System.out.println("Customer '" + deleteUsername + "' not found or is an admin.");
+                                }
+                                break;
+                            case 3: // 修改客户信息
+                                System.out.print("Enter customer username to update: ");
+                                String updateUsername = scanner.nextLine();
+                                Customer customerToUpdate = userManager.searchCustomer(updateUsername);
+                                if (customerToUpdate == null) {
+                                    System.out.println("Customer '" + updateUsername + "' not found.");
+                                    break;
+                                }
+                                System.out.println("Current username: " + customerToUpdate.getUsername() + ", enter new username (or press Enter to keep): ");
+                                String newUsername = scanner.nextLine();
+                                System.out.println("Enter new password (or press Enter to keep): ");
+                                String newPassword = scanner.nextLine();
+                                System.out.println("Current type: " + (customerToUpdate instanceof Member ? "Member" : "NonMember") + ", make member? (y/n): ");
+                                String memberChoice = scanner.nextLine().toLowerCase();
+                                boolean isMember = memberChoice.equals("y");
+                                if (userManager.updateCustomer(updateUsername, newUsername, newPassword, isMember)) {
+                                    System.out.println("Customer updated successfully.");
+                                } else {
+                                    System.out.println("Failed to update customer. New username may already exist.");
+                                }
+                                break;
+                            case 4: // 搜索客户
+                                System.out.print("Enter customer username to search: ");
+                                String searchUsername = scanner.nextLine();
+                                Customer foundCustomer = userManager.searchCustomer(searchUsername);
+                                if (foundCustomer != null) {
+                                    String customerType = foundCustomer instanceof Member ? "Member" : "NonMember";
+                                    System.out.printf("Found: ID: %d, Username: %s, Password: %s, Type: %s, Discount: %.1f%%\n", 
+                                        foundCustomer.getUserId(), foundCustomer.getUsername(), foundCustomer.getPassword(), 
+                                        customerType, foundCustomer.getDiscount() * 100);
+                                } else {
+                                    System.out.println("Customer '" + searchUsername + "' not found.");
+                                }
+                                break;
+                            case 5: // 返回管理员页面
+                                inCustomerManagementMenu = false;
+                                break;
+                            default:
+                                System.out.println("Invalid option! Please choose 1, 2, 3, 4, or 5.");
+                        }
+                    }
+                    break;
+                case 3: // Logout
                     admin.logout();
                     inAdminMenu = false;
                     break;
                 default:
-                    System.out.println("Invalid choice. Please enter 1, 2, 3, 4, 5, or 6.");
+                    System.out.println("Invalid choice. Please enter 1, 2, or 3.");
             }
         }
     }
@@ -355,16 +483,16 @@ public class Main {
 
                     if (viewChoice == 1 || viewChoice == 2) {
                         List<Product> filteredProducts = new ArrayList<>();
-                        String type = viewChoice == 1 ? "GPU" : "CPU";
+                        String productType = viewChoice == 1 ? "GPU" : "CPU";
                         for (Product p : Product.getAllProducts(inventory)) {
                             if ((viewChoice == 1 && p instanceof GPU) || (viewChoice == 2 && p instanceof CPU)) {
                                 filteredProducts.add(p);
                             }
                         }
 
-                        System.out.println("\n=== " + type + " Products ===");
+                        System.out.println("\n=== " + productType + " Products ===");
                         if (filteredProducts.isEmpty()) {
-                            System.out.println("No " + type + " products available!");
+                            System.out.println("No " + productType + " products available!");
                         } else {
                             System.out.printf("%-8s%-20s%-15s%-15s%-30s%-15s%-15s%n", 
                                 "ID", "Name", "Price", "Quantity", "Detail", "Type", "After Discount");
@@ -405,7 +533,7 @@ public class Main {
                                 continue;
                             }
                             if ((viewChoice == 1 && !(product instanceof GPU)) || (viewChoice == 2 && !(product instanceof CPU))) {
-                                System.out.println("Product ID does not match the selected type (" + type + ")!");
+                                System.out.println("Product ID does not match the selected type (" + productType + ")!");
                                 continue;
                             }
                             System.out.println("Selected: " + product);

@@ -48,6 +48,16 @@ public class Cart implements Serializable {
         return true;
     }
 
+    // 新增方法：直接添加 CartItem，不更新库存
+    public void addItemDirectly(CartItem item) {
+        items.add(item);
+    }
+
+    // 新增方法：清空 items 列表
+    public void clearItems() {
+        items.clear();
+    }
+
     public boolean editQuantity(int productId, int newQuantity, Inventory inventory) {
         Product product = Product.getProduct(productId, inventory);
         if (product == null) {
