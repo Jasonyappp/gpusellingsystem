@@ -26,17 +26,18 @@ public class CartItem implements Serializable {
         return quantity;
     }
 
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
-
     public double getSubtotal() {
         return product.getPrice() * quantity;
+    }
+    
+    public void setQuantity(int quantity){
+    
+        this.quantity = quantity;
     }
 
     @Override
     public String toString() {
-        return String.format("ID: %d | %s | Price: $%.2f | Quantity: %d | Total: $%.2f", 
+        return String.format("%-8d%-20sRM%-14.2f%-15dRM%-14.2f", 
             product.getProductId(), product.getName(), product.getPrice(), quantity, getSubtotal());
     }
 }

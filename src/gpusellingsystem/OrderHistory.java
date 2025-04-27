@@ -55,8 +55,14 @@ public class OrderHistory implements Serializable {
             System.err.println("Error loading order history: " + e.getMessage());
             // 检测是否是序列化不兼容问题（例如，NotSerializableException）
             if (e.getMessage().contains("NotSerializableException")) {
+                // 备份旧文件
+                File backupFile = new File("order_data/backup_" + username + "_orders.dat");
+                if (file.renameTo(backupFile)) {
+                    System.err.println("Backed up corrupted order history to: " + backupFile.getPath());
+                } else {
+                    System.err.println("Failed to back up corrupted order history file: " + file.getPath());
+                }
                 System.err.println("Incompatible order data detected. Resetting order history for user: " + username);
-                file.delete(); // 删除不兼容的旧文件
                 orders.clear(); // 清空订单列表
             }
         }

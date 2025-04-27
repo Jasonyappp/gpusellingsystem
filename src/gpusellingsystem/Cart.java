@@ -8,19 +8,20 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Serializable;
 
-public class Cart {
+public class Cart implements Serializable {
+    private static final long serialVersionUID = 1L;
     private List<CartItem> items;
     private String username;
 
     public Cart(String username) {
         this.username = username;
         items = new ArrayList<>();
-        loadFromFile();
+        loadFromFile(); // Load once during construction
     }
 
     public boolean addItem(Product product, int quantity, Inventory inventory) {
-        loadFromFile(); // Ensure the latest cart data is loaded
         int currentQuantity = 0;
         for (CartItem item : items) {
             if (item.getProduct().getProductId() == product.getProductId()) {
@@ -48,7 +49,6 @@ public class Cart {
     }
 
     public boolean editQuantity(int productId, int newQuantity, Inventory inventory) {
-        loadFromFile(); // Ensure the latest cart data is loaded
         Product product = Product.getProduct(productId, inventory);
         if (product == null) {
             return false;
@@ -85,7 +85,6 @@ public class Cart {
     }
 
     public double getTotal() {
-        loadFromFile(); // Ensure the latest cart data is loaded
         double total = 0;
         for (CartItem item : items) {
             total += item.getSubtotal();
@@ -94,8 +93,7 @@ public class Cart {
     }
 
     public List<CartItem> getItems() {
-        loadFromFile(); // Ensure the latest cart data is loaded
-        return items;
+        return new ArrayList<>(items); // Return a copy to prevent external modification
     }
 
     public void clearCart() {
@@ -132,8 +130,8 @@ public class Cart {
                 String name = parts[1];
                 double price = Double.parseDouble(parts[2]);
                 int quantity = Integer.parseInt(parts[3]);
-                // Create a Product instance (we don't need inventory here since we're just displaying)
-                Product product = new Product(productId, name, price, 0, "Loaded from cart") {};
+                // Use GPU as a concrete class instead of anonymous subclass
+                Product product = new GPU(productId, name, price, 0, "Loaded from cart");
                 items.add(new CartItem(product, quantity));
             }
         } catch (IOException | NumberFormatException e) {
@@ -169,7 +167,6 @@ public class Cart {
 
     @Override
     public String toString() {
-        loadFromFile(); // Ensure the latest cart data is loaded
         StringBuilder sb = new StringBuilder();
         for (CartItem item : items) {
             sb.append(item).append("\n");

@@ -550,16 +550,33 @@ public class Main {
                 if (orderChoice == 1) {
                     boolean paymentCompleted = false;
                     while (!paymentCompleted) {
-                        System.out.println("\n=== Payment ===");
-                        System.out.println("Available methods: Online Banking, Cash on Delivery");
-                        System.out.print("Enter payment method (OnlineBanking/CODPayment): ");
-                        String paymentMethod = scanner.nextLine().trim();
-                        System.out.print("Enter payment amount (RM): ");
-                        double paymentAmount;
+                        System.out.println("\n=== Payment Method ===");
+                        System.out.println("1. Online Banking");
+                        System.out.println("2. Cash on Delivery");
+                        System.out.print("Choose a payment method (1-2): ");
+                        int paymentChoice;
                         try {
-                            paymentAmount = Double.parseDouble(scanner.nextLine());
+                            paymentChoice = Integer.parseInt(scanner.nextLine());
                         } catch (NumberFormatException e) {
-                            System.out.println("Invalid amount. Please enter a valid number.");
+                            System.out.println("Invalid input. Please enter a number (1-2).");
+                            continue;
+                        }
+
+                        String paymentMethod;
+                        if (paymentChoice == 1) {
+                            paymentMethod = "OnlineBanking";
+                        } else if (paymentChoice == 2) {
+                            paymentMethod = "CODPayment";
+                        } else {
+                            System.out.println("Invalid choice. Please select 1 or 2.");
+                            continue;
+                        }
+
+                        double paymentAmount = order.getDiscountedTotal();
+                        System.out.println("Payment amount: RM " + String.format("%.2f", paymentAmount));
+                        System.out.print("Proceed with payment? (y/n): ");
+                        if (!scanner.nextLine().trim().toLowerCase().equals("y")) {
+                            System.out.println("Payment cancelled.");
                             continue;
                         }
 
@@ -569,28 +586,40 @@ public class Main {
 
                         if (paymentMethod.equalsIgnoreCase("OnlineBanking")) {
                             paymentProcessor = new OnlineBankingPayment();
-                            System.out.println("\n=== Online Banking ===");
-                            System.out.println("Available banks: Maybank, CIMB, Public Bank");
-                            System.out.print("Enter bank name: ");
-                            String bankName = scanner.nextLine().trim();
+                            System.out.println("\n=== Select Bank ===");
+                            System.out.println("1. Maybank");
+                            System.out.println("2. CIMB");
+                            System.out.println("3. Public Bank");
+                            System.out.print("Choose a bank (1-3): ");
+                            int bankChoice;
+                            try {
+                                bankChoice = Integer.parseInt(scanner.nextLine());
+                            } catch (NumberFormatException e) {
+                                System.out.println("Invalid input. Please enter a number (1-3).");
+                                continue;
+                            }
+
+                            String bankName;
+                            if (bankChoice == 1) {
+                                bankName = "Maybank";
+                            } else if (bankChoice == 2) {
+                                bankName = "CIMB";
+                            } else if (bankChoice == 3) {
+                                bankName = "Public Bank";
+                            } else {
+                                System.out.println("Invalid choice. Please select 1, 2, or 3.");
+                                continue;
+                            }
+
                             System.out.print("Enter bank username: ");
                             String bankUsername = scanner.nextLine().trim();
                             System.out.print("Enter bank password: ");
                             String bankPassword = scanner.nextLine().trim();
-                            System.out.print("Confirm payment? (Yes/Later): ");
-                            String confirm = scanner.nextLine().trim().toLowerCase();
-                            if (confirm.equals("yes")) {
-                                details.put("bankName", bankName);
-                                details.put("bankUsername", bankUsername);
-                                details.put("bankPassword", bankPassword);
-                                result = paymentProcessor.processPayment(order, paymentAmount, details);
-                            } else if (confirm.equals("later")) {
-                                System.out.println("Payment cancelled. Returning to payment selection.");
-                                continue;
-                            } else {
-                                System.out.println("Invalid input. Please enter 'Yes' or 'Later'.");
-                                continue;
-                            }
+
+                            details.put("bankName", bankName);
+                            details.put("bankUsername", bankUsername);
+                            details.put("bankPassword", bankPassword);
+                            result = paymentProcessor.processPayment(order, paymentAmount, details);
                         } else if (paymentMethod.equalsIgnoreCase("CODPayment")) {
                             paymentProcessor = new CODPayment();
                             System.out.println("\n=== Cash on Delivery ===");
@@ -601,9 +630,6 @@ public class Main {
                             details.put("deliveryAddress", deliveryAddress);
                             details.put("contactInfo", contactInfo);
                             result = paymentProcessor.processPayment(order, paymentAmount, details);
-                        } else {
-                            System.out.println("Invalid payment method. Please select OnlineBanking or CODPayment.");
-                            continue;
                         }
 
                         try {

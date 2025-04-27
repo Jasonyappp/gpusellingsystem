@@ -1,9 +1,10 @@
 package gpusellingsystem;
-
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class Product {
+public abstract class Product implements Serializable {
+    private static final long serialVersionUID = 1L;
     private int productId;
     private String name;
     private double price;

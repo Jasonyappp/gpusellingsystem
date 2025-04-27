@@ -9,6 +9,9 @@ package gpusellingsystem;
  * @author chong
  */
 public class GPU extends Product {
+    
+    private static final long serialVersionUID = 1L;
+    
     public GPU(int productId, String name, double price, int quantity, String detail) {
         super(productId, name, price, quantity, detail);
     }
