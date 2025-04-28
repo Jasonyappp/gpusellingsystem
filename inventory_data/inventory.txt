@@ -1,2 +1,2 @@
-1,RTX1060,1000.00,92,High-performance GPU,GPU
+1,RTX1060,1000.00,77,High-performance GPU,GPU
 2,RTX2050,1500.00,43,Entry-level GPU,GPU
