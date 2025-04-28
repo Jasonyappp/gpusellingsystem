@@ -177,15 +177,7 @@ public class Main {
             return;
         }
 
-        System.out.print("Do you want to join as a member? (y/n): ");
-        String joinMember = scanner.nextLine().toLowerCase();
-
-        User user;
-        if (joinMember.equals("y")) {
-            user = new Member(User.getNextUserId(), username, password);
-        } else {
-            user = new NonMember(User.getNextUserId(), username, password);
-        }
+        User user = new NonMember(User.getNextUserId(), username, password);
         User.incrementNextUserId();
         User.getUsers().put(username, user);
         User.saveUsersToFile();

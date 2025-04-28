@@ -5,6 +5,7 @@
 8,Wong,123456,false,true
 11,yap,123456,false,true
 2,admin_yap,adminpass,true,false
+12,leong1,leong,false,false
 1,admin_leong,adminpass,true,false
 3,yap123,yap1234,false,true
 5,leong,leong,false,false
