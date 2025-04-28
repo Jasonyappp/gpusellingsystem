@@ -16,8 +16,8 @@ public class OnlineBankingPayment extends PaymentMethod {
     private static final double PUBLIC_BANK_DISCOUNT = 0.05; // 5% 折扣
 
     @Override
-    public PaymentResult processPayment(Order order, double paymentAmount, Map<String, String> details) {
-        double expectedAmount = order.getDiscountedTotal();
+    public PaymentResult processPayment(Order order, Customer customer, double paymentAmount, Map<String, String> details) {
+        double expectedAmount = order.getTotal(); // Use raw total since discount is handled in Invoice
         if (Math.abs(paymentAmount - expectedAmount) > 0.01) {
             return new PaymentResult(false, String.format("Payment amount (RM %.2f) does not match order total (RM %.2f)!", 
                 paymentAmount, expectedAmount), null, 0.0);
@@ -51,9 +51,7 @@ public class OnlineBankingPayment extends PaymentMethod {
                 bankDiscount = 0.0; // Fallback, should not occur due to validation
         }
 
-        // Calculate final amount after bank discount
-        double finalAmount = expectedAmount * (1 - bankDiscount);
-        Invoice invoice = new Invoice(order, "online_banking", true, bankName, bankUsername, null, null, null, bankDiscount);
+        Invoice invoice = new Invoice(order, customer, "online_banking", true, bankName, bankUsername, null, null, null, bankDiscount);
         return new PaymentResult(true, "Online banking payment successful!", invoice, bankDiscount);
     }
 

@@ -34,6 +34,5 @@ public abstract class PaymentMethod {
         }
     }
 
-    public abstract PaymentResult processPayment(Order order, double paymentAmount, Map<String, String> details);
-
+    public abstract PaymentResult processPayment(Order order, Customer customer, double paymentAmount, Map<String, String> details);
 }

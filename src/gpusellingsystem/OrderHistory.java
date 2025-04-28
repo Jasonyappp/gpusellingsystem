@@ -1,17 +1,16 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package gpusellingsystem;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.io.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 /**
  *
  * @author jason
  */
-public class OrderHistory implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class OrderHistory {
     private List<Order> orders;
     private final String username;
 
@@ -39,45 +38,61 @@ public class OrderHistory implements Serializable {
 
     private void loadFromFile() {
         orders.clear();
-        File file = new File("order_data/" + username + "_orders.dat");
+        String filePath = "order_data/" + username + "_orders.txt";
+        File file = new File(filePath);
         if (!file.exists()) {
             return;
         }
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-            List<?> loadedOrders = (List<?>) ois.readObject();
-            for (Object obj : loadedOrders) {
-                if (obj instanceof Order) {
-                    orders.add((Order) obj);
-                    Order.setNextOrderId(((Order) obj).getOrderId() + 1);
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length != 5) {
+                    continue; // Skip malformed lines
                 }
+                int orderId = Integer.parseInt(parts[0]);
+                String username = parts[1];
+                LocalDate orderDate = LocalDate.parse(parts[2], DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                double total = Double.parseDouble(parts[3]);
+                String paymentStatus = parts[4];
+
+                // Create a dummy empty Cart
+                Cart cart = new Cart(username);
+                cart.clearItems(); // Ensure cart is empty
+                // Create the Order object
+                Order order = new Order(orderId, username, cart, orderDate, total);
+                order.setPaymentStatus(paymentStatus);
+                orders.add(order);
+                Order.setNextOrderId(orderId + 1);
             }
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException | NumberFormatException e) {
             System.err.println("Error loading order history: " + e.getMessage());
-            // 检测是否是序列化不兼容问题（例如，NotSerializableException）
-            if (e.getMessage().contains("NotSerializableException")) {
-                // 备份旧文件
-                File backupFile = new File("order_data/backup_" + username + "_orders.dat");
-                if (file.renameTo(backupFile)) {
-                    System.err.println("Backed up corrupted order history to: " + backupFile.getPath());
-                } else {
-                    System.err.println("Failed to back up corrupted order history file: " + file.getPath());
-                }
-                System.err.println("Incompatible order data detected. Resetting order history for user: " + username);
-                orders.clear(); // 清空订单列表
-            }
         }
     }
 
     private void saveToFile() {
         try {
+            // Create order_data folder if it doesn't exist
             File dir = new File("order_data");
-            if (!dir.exists() && !dir.mkdirs()) {
-                System.err.println("Error creating order_data directory");
-                return;
+            if (!dir.exists()) {
+                if (!dir.mkdirs()) {
+                    System.err.println("Error creating order_data directory");
+                    return;
+                }
             }
-            File file = new File("order_data/" + username + "_orders.txt");
-            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
-                oos.writeObject(orders);
+
+            // Create file path: order_data/(username)_orders.txt
+            String filePath = "order_data/" + username + "_orders.txt";
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+                for (Order order : orders) {
+                    writer.write(String.format("%d,%s,%s,%.2f,%s",
+                        order.getOrderId(),
+                        order.getUsername(),
+                        order.getOrderDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                        order.getTotal(),
+                        order.getPaymentStatus() != null ? order.getPaymentStatus() : "Unknown"));
+                    writer.newLine();
+                }
             }
         } catch (IOException e) {
             System.err.println("Error saving order history: " + e.getMessage());
@@ -87,11 +102,16 @@ public class OrderHistory implements Serializable {
     @Override
     public String toString() {
         if (orders.isEmpty()) {
-            return "";
+            return "You have no past orders.";
         }
         StringBuilder sb = new StringBuilder();
+        int index = 1;
         for (Order order : orders) {
-            sb.append(order).append("\n");
+            sb.append(index).append(". Order Id: ").append(order.getOrderId()).append("\n");
+            sb.append("   Username: ").append(order.getUsername()).append("\n");
+            sb.append("   Order Date: ").append(order.getOrderDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))).append("\n");
+            sb.append("   Payment Status: ").append(order.getPaymentStatus() != null ? order.getPaymentStatus() : "Unknown").append("\n");
+            index++;
         }
         return sb.toString();
     }

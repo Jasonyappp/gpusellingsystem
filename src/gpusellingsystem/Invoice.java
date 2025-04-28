@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter;
  */
 public class Invoice {
     private final Order order;
+    private final Customer customer; // Add Customer to calculate discount
     private final String paymentMethod;
     private final boolean paid;
     private final String bankName;
@@ -20,14 +21,15 @@ public class Invoice {
     private final LocalDate deliveryDate;
     private final double bankDiscount;
 
-    public Invoice(Order order, String paymentMethod, boolean paid, String bankName, String bankUsername,
+    public Invoice(Order order, Customer customer, String paymentMethod, boolean paid, String bankName, String bankUsername,
                    String deliveryAddress, String contactInfo, LocalDate deliveryDate) {
-        this(order, paymentMethod, paid, bankName, bankUsername, deliveryAddress, contactInfo, deliveryDate, 0.0);
+        this(order, customer, paymentMethod, paid, bankName, bankUsername, deliveryAddress, contactInfo, deliveryDate, 0.0);
     }
 
-    public Invoice(Order order, String paymentMethod, boolean paid, String bankName, String bankUsername,
+    public Invoice(Order order, Customer customer, String paymentMethod, boolean paid, String bankName, String bankUsername,
                    String deliveryAddress, String contactInfo, LocalDate deliveryDate, double bankDiscount) {
         this.order = order;
+        this.customer = customer;
         this.paymentMethod = paymentMethod;
         this.paid = paid;
         this.bankName = bankName;
@@ -59,9 +61,15 @@ public class Invoice {
                 p.getProductId(), p.getName(), p.getPrice(), item.getQuantity(), subtotal));
         }
         sb.append("--------------------------------------------------\n");
-        sb.append(String.format("Total (Before Discount): RM %.2f\n", order.getTotal()));
-        sb.append(String.format("Customer Discount: %.1f%%\n", (1 - order.getDiscountedTotal() / order.getTotal()) * 100));
-        double totalAfterCustomerDiscount = order.getDiscountedTotal();
+        double total = order.getTotal();
+        sb.append(String.format("Total (Before Discount): RM %.2f\n", total));
+        // Calculate customer discount
+        double customerDiscount = customer.getDiscount();
+        if (customerDiscount < 0 || customerDiscount > 1) {
+            customerDiscount = 0; // Fallback to no discount if invalid
+        }
+        double totalAfterCustomerDiscount = total * (1 - customerDiscount);
+        sb.append(String.format("Customer Discount: %.1f%%\n", customerDiscount * 100));
         sb.append(String.format("Total (After Customer Discount): RM %.2f\n", totalAfterCustomerDiscount));
         sb.append(String.format("Payment Method: %s\n", paymentMethod.equals("online_banking") ? "Online Banking" : "Cash on Delivery"));
         if (paymentMethod.equals("online_banking")) {
@@ -69,7 +77,6 @@ public class Invoice {
             sb.append(String.format("Bank Discount: %.1f%%\n", bankDiscount * 100));
             sb.append(String.format("Total (After Bank Discount): RM %.2f\n", totalAfterCustomerDiscount * (1 - bankDiscount)));
         }
-//        sb.append(String.format("Payment Status: %s\n", paid ? "Paid" : "Pending"));
         sb.append("--------------------------------------------------\n");
         if (paymentMethod.equals("online_banking")) {
             sb.append("Bank Information:\n");
@@ -84,5 +91,19 @@ public class Invoice {
         }
         sb.append("==================================================\n");
         return sb.toString();
+    }
+
+    // Add getters for payment calculations
+    public double getTotalAfterCustomerDiscount() {
+        double total = order.getTotal();
+        double customerDiscount = customer.getDiscount();
+        if (customerDiscount < 0 || customerDiscount > 1) {
+            customerDiscount = 0;
+        }
+        return total * (1 - customerDiscount);
+    }
+
+    public double getBankDiscount() {
+        return bankDiscount;
     }
 }

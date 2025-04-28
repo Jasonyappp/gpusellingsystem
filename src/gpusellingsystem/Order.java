@@ -12,9 +12,9 @@ public class Order implements Serializable {
     private final int orderId;
     private final String username;
     private final List<CartItem> items;
-    private final double total;
-    private final double discountedTotal;
+    private final double total; // Only keep total, remove discountedTotal
     private final LocalDate orderDate;
+    private String paymentStatus;
 
     public Order(Cart cart, Customer customer) {
         this.orderId = nextOrderId++;
@@ -25,13 +25,22 @@ public class Order implements Serializable {
             this.items.add(new CartItem(item.getProduct(), item.getQuantity()));
         }
         this.total = cart.getTotal();
-        // Apply discount with validation
-        double discount = customer.getDiscount();
-        if (discount < 0 || discount > 1) {
-            discount = 0; // Fallback to no discount if invalid
-        }
-        this.discountedTotal = this.total * (1 - discount);
         this.orderDate = LocalDate.now();
+        this.paymentStatus = "Pending";
+    }
+
+    // New constructor for loading from file
+    public Order(int orderId, String username, Cart cart, LocalDate orderDate, double total) {
+        this.orderId = orderId;
+        this.username = username;
+        // Deep copy items from cart
+        this.items = new ArrayList<>();
+        for (CartItem item : cart.getItems()) {
+            this.items.add(new CartItem(item.getProduct(), item.getQuantity()));
+        }
+        this.total = total;
+        this.orderDate = orderDate;
+        this.paymentStatus = "Unknown";
     }
 
     public int getOrderId() {
@@ -49,9 +58,13 @@ public class Order implements Serializable {
     public double getTotal() {
         return total;
     }
+    
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
 
-    public double getDiscountedTotal() {
-        return discountedTotal;
+    public String getPaymentStatus() {
+        return paymentStatus;
     }
 
     public LocalDate getOrderDate() {
@@ -93,9 +106,7 @@ public class Order implements Serializable {
                 p.getProductId(), p.getName(), p.getPrice(), item.getQuantity(), subtotal));
         }
         sb.append("--------------------------------------------------\n");
-        sb.append(String.format("Total: RM %.2f\n", total));
-//        sb.append(String.format("Discount: %.1f%%\n", (1 - discountedTotal / total) * 100));
-//        sb.append(String.format("Total (After Discount): RM %.2f\n", discountedTotal));
+        sb.append(String.format("Total: RM %.2f\n", total)); 
         sb.append("==================================================\n");
         return sb.toString();
     }

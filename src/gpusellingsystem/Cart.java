@@ -178,8 +178,16 @@ public class Cart implements Serializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        if (items.isEmpty()) {
+            return "Your cart is empty!";
+        }
+        // Add header
+        sb.append(String.format("%-8s%-20s%-15s%-15s\n", 
+            "ID", "ProductName", "Price", "Quantity"));
         for (CartItem item : items) {
-            sb.append(item).append("\n");
+            Product p = item.getProduct();
+            sb.append(String.format("%-8d%-20sRM%-14.2f%-15d\n", 
+                p.getProductId(), p.getName(), p.getPrice(), item.getQuantity()));
         }
         sb.append("Total: RM").append(String.format("%.2f", getTotal()));
         return sb.toString();

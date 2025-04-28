@@ -11,8 +11,8 @@ import java.util.Map;
  */
 public class CODPayment extends PaymentMethod {
     @Override
-    public PaymentResult processPayment(Order order, double paymentAmount, Map<String, String> details) {
-        double expectedAmount = order.getDiscountedTotal();
+    public PaymentResult processPayment(Order order, Customer customer, double paymentAmount, Map<String, String> details) {
+        double expectedAmount = order.getTotal();
         if (paymentAmount != expectedAmount) {
             return new PaymentResult(false, String.format("Payment amount (RM %.2f) does not match order total (RM %.2f)!", 
                 paymentAmount, expectedAmount), null);
@@ -26,7 +26,7 @@ public class CODPayment extends PaymentMethod {
         }
 
         LocalDate deliveryDate = LocalDate.now().plusDays(3);
-        Invoice invoice = new Invoice(order, "cod_payment", false, null, null, deliveryAddress, contactInfo, deliveryDate);
+        Invoice invoice = new Invoice(order, customer, "cod_payment", false, null, null, deliveryAddress, contactInfo, deliveryDate);
         return new PaymentResult(true, "Cash on delivery order confirmed!", invoice);
     }
 }
