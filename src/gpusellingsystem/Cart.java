@@ -21,7 +21,7 @@ public class Cart implements Serializable {
         loadFromFile(); // Load once during construction
     }
 
-    public boolean addItem(Product product, int quantity, Inventory inventory) {
+    public boolean addItem(Product product, int quantity, ProductManager inventory) {
         int currentQuantity = 0;
         for (CartItem item : items) {
             if (item.getProduct().getProductId() == product.getProductId()) {
@@ -58,7 +58,7 @@ public class Cart implements Serializable {
         items.clear();
     }
 
-    public boolean editQuantity(int productId, int newQuantity, Inventory inventory) {
+    public boolean editQuantity(int productId, int newQuantity, ProductManager inventory) {
         Product product = Product.getProduct(productId, inventory);
         if (product == null) {
             return false;

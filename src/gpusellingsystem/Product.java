@@ -19,11 +19,11 @@ public abstract class Product implements Serializable {
         this.detail = detail;
     }
 
-    public static Product getProduct(int productId, Inventory inventory) {
+    public static Product getProduct(int productId, ProductManager inventory) {
         return inventory.getProducts().get(productId);
     }
 
-    public static List<Product> getAllProducts(Inventory inventory) {
+    public static List<Product> getAllProducts(ProductManager inventory) {
         return new ArrayList<>(inventory.getProducts().values());
     }
 

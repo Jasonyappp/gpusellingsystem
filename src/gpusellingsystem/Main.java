@@ -8,7 +8,7 @@ import java.util.Map;
 import java.time.format.DateTimeFormatter;
 
 public class Main {
-    private static Inventory inventory = new Inventory();
+    private static ProductManager inventory = new ProductManager();
     private static UserManager userManager = new UserManager();
     private static Scanner scanner = new Scanner(System.in);
 
@@ -111,7 +111,7 @@ public class Main {
                     System.out.println("Password reset successfully. Please log in again.");
                     return null;
                 } else {
-                    System.out.println("Admin authentication failed. Payment reset cancelled.");
+                    System.out.println("Admin authentication failed. Password reset cancelled.");
                     return null;
                 }
             }
@@ -144,7 +144,7 @@ public class Main {
                         System.out.println("Password reset successfully. Please log in again.");
                         return null;
                     } else {
-                        System.out.println("Admin authentication failed. Payment reset cancelled.");
+                        System.out.println("Admin authentication failed. Password reset cancelled.");
                         return null;
                     }
                 }
@@ -444,7 +444,7 @@ public class Main {
         }
     }
 
-    private static void handleCustomerMenu(Customer customer, Inventory inventory) {
+    private static void handleCustomerMenu(Customer customer, ProductManager inventory) {
         Cart cart = new Cart(customer.getUsername());
         OrderHistory history = new OrderHistory(customer.getUsername());
 
@@ -455,7 +455,7 @@ public class Main {
             System.out.println("1. View Products");
             System.out.println("2. View Cart");
             System.out.println("3. Checkout");
-            System.out.println("4. View Order History");
+            System.out.println("4. Profile");
             System.out.println("5. Logout");
             System.out.print("Choose an option: ");
             int choice;
@@ -791,22 +791,63 @@ public class Main {
                                 }
                             }
                         }
-                        } else if (orderChoice == 2) {
+                    } else if (orderChoice == 2) {
                         order.setPaymentStatus("Cancelled");
                         history.addOrder(order);
                         System.out.println("Order cancelled. Items remain in your cart.");
-
                     } else {
                         System.out.println("Invalid action! Please choose 1 or 2.");
                     }
                     break;
                 case 4:
-                    System.out.println("\n=== Order History ===");
-                    try {
-                        String historyStr = history.toString();
-                        System.out.println(historyStr);
-                    } catch (RuntimeException e) {
-                        System.out.println("Error loading order history: " + e.getMessage());
+                    boolean inProfileMenu = true;
+                    while (inProfileMenu) {
+                        System.out.println("\n=== Profile ===");
+                        System.out.println("User ID: " + customer.getUserId());
+                        System.out.println("Username: " + customer.getUsername());
+                        System.out.println("Membership Status: " + (customer instanceof Member ? "Member" : "NonMember"));
+                        System.out.println("1. Change Password");
+                        System.out.println("2. View Order History");
+                        System.out.println("3. Back to Main Menu");
+                        System.out.print("Choose an option: ");
+                        int profileChoice;
+                        try {
+                            profileChoice = Integer.parseInt(scanner.nextLine());
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid input. Please enter a number.");
+                            continue;
+                        }
+
+                        switch (profileChoice) {
+                            case 1: // Change Password
+                                System.out.print("Enter new password: ");
+                                String newPassword = scanner.nextLine();
+                                if (newPassword.isEmpty()) {
+                                    System.out.println("Password cannot be empty. Change cancelled.");
+                                    continue;
+                                }
+                                if (newPassword.length() < 5 || newPassword.length() > 12) {
+                                    System.out.println("Password must be between 5 and 12 characters. Change cancelled.");
+                                    continue;
+                                }
+                                customer.resetPassword(newPassword);
+                                System.out.println("Password changed successfully.");
+                                break;
+                            case 2: // View Order History
+                                System.out.println("\n=== Order History ===");
+                                try {
+                                    String historyStr = history.toString();
+                                    System.out.println(historyStr);
+                                } catch (RuntimeException e) {
+                                    System.out.println("Error loading order history: " + e.getMessage());
+                                }
+                                break;
+                            case 3: // Back to Main Menu
+                                inProfileMenu = false;
+                                break;
+                            default:
+                                System.out.println("Invalid option! Please choose 1, 2, or 3.");
+                        }
                     }
                     break;
                 case 5:

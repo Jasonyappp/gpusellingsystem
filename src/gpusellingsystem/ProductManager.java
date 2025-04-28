@@ -9,12 +9,12 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Inventory {
+public class ProductManager {
     private Map<Integer, Product> products = new HashMap<>();
     private int nextProductId = 1;
     private static final String FILE_PATH = "inventory_data/inventory.txt";
 
-    public Inventory() {
+    public ProductManager() {
         loadFromFile(); // Load products from file on initialization
         // If the file was empty or didn't exist, initialize with default products
         if (products.isEmpty()) {
