@@ -75,7 +75,7 @@ public class OrderHistory implements Serializable {
                 System.err.println("Error creating order_data directory");
                 return;
             }
-            File file = new File("order_data/" + username + "_orders.dat");
+            File file = new File("order_data/" + username + "_orders.txt");
             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
                 oos.writeObject(orders);
             }

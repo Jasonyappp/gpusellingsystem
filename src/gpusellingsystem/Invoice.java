@@ -18,9 +18,15 @@ public class Invoice {
     private final String deliveryAddress;
     private final String contactInfo;
     private final LocalDate deliveryDate;
+    private final double bankDiscount;
 
     public Invoice(Order order, String paymentMethod, boolean paid, String bankName, String bankUsername,
                    String deliveryAddress, String contactInfo, LocalDate deliveryDate) {
+        this(order, paymentMethod, paid, bankName, bankUsername, deliveryAddress, contactInfo, deliveryDate, 0.0);
+    }
+
+    public Invoice(Order order, String paymentMethod, boolean paid, String bankName, String bankUsername,
+                   String deliveryAddress, String contactInfo, LocalDate deliveryDate, double bankDiscount) {
         this.order = order;
         this.paymentMethod = paymentMethod;
         this.paid = paid;
@@ -29,6 +35,7 @@ public class Invoice {
         this.deliveryAddress = deliveryAddress;
         this.contactInfo = contactInfo;
         this.deliveryDate = deliveryDate;
+        this.bankDiscount = bankDiscount;
     }
 
     public String toFormattedString() {
@@ -53,10 +60,16 @@ public class Invoice {
         }
         sb.append("--------------------------------------------------\n");
         sb.append(String.format("Total (Before Discount): RM %.2f\n", order.getTotal()));
-        sb.append(String.format("Discount: %.1f%%\n", (1 - order.getDiscountedTotal() / order.getTotal()) * 100));
-        sb.append(String.format("Total (After Discount): RM %.2f\n", order.getDiscountedTotal()));
+        sb.append(String.format("Customer Discount: %.1f%%\n", (1 - order.getDiscountedTotal() / order.getTotal()) * 100));
+        double totalAfterCustomerDiscount = order.getDiscountedTotal();
+        sb.append(String.format("Total (After Customer Discount): RM %.2f\n", totalAfterCustomerDiscount));
         sb.append(String.format("Payment Method: %s\n", paymentMethod.equals("online_banking") ? "Online Banking" : "Cash on Delivery"));
-        sb.append(String.format("Payment Status: %s\n", paid ? "Paid" : "Pending"));
+        if (paymentMethod.equals("online_banking")) {
+            sb.append(String.format("Bank: %s\n", bankName));
+            sb.append(String.format("Bank Discount: %.1f%%\n", bankDiscount * 100));
+            sb.append(String.format("Total (After Bank Discount): RM %.2f\n", totalAfterCustomerDiscount * (1 - bankDiscount)));
+        }
+//        sb.append(String.format("Payment Status: %s\n", paid ? "Paid" : "Pending"));
         sb.append("--------------------------------------------------\n");
         if (paymentMethod.equals("online_banking")) {
             sb.append("Bank Information:\n");

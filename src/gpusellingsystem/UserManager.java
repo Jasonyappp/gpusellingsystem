@@ -65,4 +65,17 @@ public class UserManager {
         }
         return null;
     }
+    
+    public boolean upgradeToMember(String username){
+    
+        User user =User.getUsers().get(username);
+        if(user == null || user.isAdmin() || user instanceof Member){
+        
+            return false;
+        }
+        User newUser = new Member(user.getUserId(),user.getUsername(), user.getPassword());
+        User.getUsers().put(username, newUser);
+        User.saveUsersToFile();
+        return true;
+    }
 }

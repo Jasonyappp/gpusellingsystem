@@ -719,9 +719,15 @@ public class Main {
                             System.out.println("2. CIMB");
                             System.out.println("3. Public Bank");
                             System.out.print("Choose a bank (1-3): ");
+                            String input = scanner.nextLine().trim();
+                            if(input.isEmpty()){
+                            
+                                System.out.println("Input cannot be emply. Please select a bank (1-3).");
+                                continue;
+                            }
                             int bankChoice;
                             try {
-                                bankChoice = Integer.parseInt(scanner.nextLine());
+                                bankChoice = Integer.parseInt(input);
                             } catch (NumberFormatException e) {
                                 System.out.println("Invalid input. Please enter a number (1-3).");
                                 continue;
@@ -763,6 +769,9 @@ public class Main {
                         try {
                             if (result.isSuccess()) {
                                 history.addOrder(order);
+                                if (order.getDiscountedTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
+                                    System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
+                                }
                                 System.out.println("\n=== Order Confirmation ===");
                                 System.out.println(order);
                                 System.out.println("\n=== Payment Result ===");

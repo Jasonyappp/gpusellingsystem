@@ -93,9 +93,9 @@ public class Order implements Serializable {
                 p.getProductId(), p.getName(), p.getPrice(), item.getQuantity(), subtotal));
         }
         sb.append("--------------------------------------------------\n");
-        sb.append(String.format("Total (Before Discount): RM %.2f\n", total));
-        sb.append(String.format("Discount: %.1f%%\n", (1 - discountedTotal / total) * 100));
-        sb.append(String.format("Total (After Discount): RM %.2f\n", discountedTotal));
+        sb.append(String.format("Total: RM %.2f\n", total));
+//        sb.append(String.format("Discount: %.1f%%\n", (1 - discountedTotal / total) * 100));
+//        sb.append(String.format("Total (After Discount): RM %.2f\n", discountedTotal));
         sb.append("==================================================\n");
         return sb.toString();
     }
