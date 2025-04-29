@@ -417,11 +417,6 @@ public class Main {
                                 System.out.println("Current type: " + (customerToUpdate instanceof Member ? "Member" : "NonMember") + ", make member? (y/n): ");
                                 String memberChoice = scanner.nextLine().toLowerCase();
                                 boolean isMember = memberChoice.equals("y");
-                                if (userManager.updateCustomer(updateUsername, newUsername, newPassword, isMember)) {
-                                    System.out.println("Customer updated successfully.");
-                                } else {
-                                    System.out.println("Failed to update customer. New username may already exist.");
-                                }
                                 break;
                             case 4: // Search Customer
                                 System.out.print("Enter customer username to search: ");
@@ -460,7 +455,7 @@ public class Main {
 
         System.out.println("\n=== Welcome to GPU/CPU Shop ===");
         boolean inCustomerMenu = true;
-        while (inCustomerMenu && customer.isLoggedIn()) {
+        mainMenu: while (inCustomerMenu && customer.isLoggedIn()) {
             System.out.println("\n=== Main Menu ===");
             System.out.println("1. View Products");
             System.out.println("2. View Cart");
@@ -578,80 +573,79 @@ public class Main {
                         }
                     }
                     break;
-            
-                    case 2:
-                     System.out.println("\n=== Your Cart ===");
-                     if (cart.getItems().isEmpty()) {
-                         System.out.println("Your cart is empty!");
-                         break;
-                     }
-                     System.out.println(cart);
-                     while (true) {
-                         System.out.println("\n=== Cart Actions ===");
-                         System.out.println("1. Edit Item Quantity (set to 0 to remove)");
-                         System.out.println("2. Clear Cart");
-                         System.out.println("3. Back to Main Menu");
-                         System.out.print("Choose an action: ");
-                         int cartChoice;
-                         try {
-                             cartChoice = Integer.parseInt(scanner.nextLine());
-                         } catch (NumberFormatException e) {
-                             System.out.println("Invalid input. Please enter a number.");
-                             continue;
-                         }
+                case 2:
+                    System.out.println("\n=== Your Cart ===");
+                    if (cart.getItems().isEmpty()) {
+                        System.out.println("Your cart is empty!");
+                        break;
+                    }
+                    System.out.println(cart);
+                    while (true) {
+                        System.out.println("\n=== Cart Actions ===");
+                        System.out.println("1. Edit Item Quantity (set to 0 to remove)");
+                        System.out.println("2. Clear Cart");
+                        System.out.println("3. Back to Main Menu");
+                        System.out.print("Choose an action: ");
+                        int cartChoice;
+                        try {
+                            cartChoice = Integer.parseInt(scanner.nextLine());
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid input. Please enter a number.");
+                            continue;
+                        }
 
-                         if (cartChoice == 1) {
-                             System.out.println("\nCurrent Cart:");
-                             System.out.println(cart);
-                             System.out.print("Enter product ID to edit quantity: ");
-                             int productId;
-                             try {
-                                 productId = Integer.parseInt(scanner.nextLine());
-                             } catch (NumberFormatException e) {
-                                 System.out.println("Invalid product ID. Please enter a number.");
-                                 continue;
-                             }
-                             Product product = Product.getProduct(productId, inventory);
-                             if (product == null || cart.getItems().stream().noneMatch(item -> item.getProduct().getProductId() == productId)) {
-                                 System.out.println("Product not found in cart!");
-                                 continue;
-                             }
-                             System.out.println("Product stock: " + product.getQuantity());
-                             System.out.print("Enter new quantity (0 to remove): ");
-                             int newQuantity;
-                             try {
-                                 newQuantity = Integer.parseInt(scanner.nextLine());
-                             } catch (NumberFormatException e) {
-                                 System.out.println("Invalid quantity. Please enter a number.");
-                                 continue;
-                             }
-                             if (!cart.editQuantity(productId, newQuantity, inventory)) {
-                                 System.out.println("Cannot update quantity: requested quantity exceeds stock (" + product.getQuantity() + ")!");
-                                 continue;
-                             }
-                             if (newQuantity <= 0) {
-                                 System.out.println("Item removed from cart.");
-                             } else {
-                                 System.out.println("Quantity updated successfully.");
-                             }
-                         } else if (cartChoice == 2) {
-                             List<CartItem> itemsToClear = new ArrayList<>(cart.getItems());
-                             cart.clearCart();
-                             for (CartItem item : itemsToClear) {
-                                 Product product = Product.getProduct(item.getProduct().getProductId(), inventory);
-                                 if (product != null) {
-                                     int newStock = product.getQuantity() + item.getQuantity();
-                                     inventory.updateProduct(product.getProductId(), null, -1, newStock, null);
-                                 }
-                             }
-                             System.out.println("Cart cleared successfully.");
-                         } else if (cartChoice == 3) {
-                             break;
-                         } else {
-                             System.out.println("Invalid action! Please choose a valid option.");
-                         }
-                     }
-                     break;
+                        if (cartChoice == 1) {
+                            System.out.println("\nCurrent Cart:");
+                            System.out.println(cart);
+                            System.out.print("Enter product ID to edit quantity: ");
+                            int productId;
+                            try {
+                                productId = Integer.parseInt(scanner.nextLine());
+                            } catch (NumberFormatException e) {
+                                System.out.println("Invalid product ID. Please enter a number.");
+                                continue;
+                            }
+                            Product product = Product.getProduct(productId, inventory);
+                            if (product == null || cart.getItems().stream().noneMatch(item -> item.getProduct().getProductId() == productId)) {
+                                System.out.println("Product not found in cart!");
+                                continue;
+                            }
+                            System.out.println("Product stock: " + product.getQuantity());
+                            System.out.print("Enter new quantity (0 to remove): ");
+                            int newQuantity;
+                            try {
+                                newQuantity = Integer.parseInt(scanner.nextLine());
+                            } catch (NumberFormatException e) {
+                                System.out.println("Invalid quantity. Please enter a number.");
+                                continue;
+                            }
+                            if (!cart.editQuantity(productId, newQuantity, inventory)) {
+                                System.out.println("Cannot update quantity: requested quantity exceeds stock (" + product.getQuantity() + ")!");
+                                continue;
+                            }
+                            if (newQuantity <= 0) {
+                                System.out.println("Item removed from cart.");
+                            } else {
+                                System.out.println("Quantity updated successfully.");
+                            }
+                        } else if (cartChoice == 2) {
+                            List<CartItem> itemsToClear = new ArrayList<>(cart.getItems());
+                            cart.clearCart();
+                            for (CartItem item : itemsToClear) {
+                                Product product = Product.getProduct(item.getProduct().getProductId(), inventory);
+                                if (product != null) {
+                                    int newStock = product.getQuantity() + item.getQuantity();
+                                    inventory.updateProduct(product.getProductId(), null, -1, newStock, null);
+                                }
+                            }
+                            System.out.println("Cart cleared successfully.");
+                        } else if (cartChoice == 3) {
+                            break;
+                        } else {
+                            System.out.println("Invalid action! Please choose a valid option.");
+                        }
+                    }
+                    break;
                 case 3:
                     if (cart.getItems().isEmpty()) {
                         System.out.println("Your cart is empty! Please add items before checking out.");
@@ -667,10 +661,19 @@ public class Main {
                     }
                     System.out.println(order);
 
-                    System.out.print("Confirm order? (y/n): ");
-                    if (!scanner.nextLine().trim().toLowerCase().equals("y")) {
-                        System.out.println("Order cancelled. Returning to menu.");
-                        continue;
+                    while (true) {
+                        System.out.print("Confirm order? (y/n): ");
+                        String confirmInput = scanner.nextLine().trim().toLowerCase();
+                        if (confirmInput.equals("y")) {
+                            break; // Proceed to Payment Options
+                        } else if (confirmInput.equals("n") || confirmInput.equals("2")) {
+                            order.setPaymentStatus("Cancelled");
+                            history.addOrder(order);
+                            System.out.println("Order cancelled. Returning to menu.");
+                            continue mainMenu; // Return to Main Menu
+                        } else {
+                            System.out.println("Invalid input. Please enter 'y' or 'n'.");
+                        }
                     }
 
                     System.out.println("\n=== Payment Options ===");
@@ -687,7 +690,7 @@ public class Main {
 
                     if (orderChoice == 1) {
                         boolean paymentCompleted = false;
-                        while (paymentCompleted) {
+                        while (!paymentCompleted) {
                             System.out.println("\n=== Payment Method ===");
                             System.out.println("1. Online Banking");
                             System.out.println("2. Cash on Delivery");
@@ -712,12 +715,18 @@ public class Main {
 
                             double paymentAmount = order.getTotal();
                             System.out.println("Payment amount: RM " + String.format("%.2f", paymentAmount));
+                           while (true) {
                             System.out.print("Proceed with payment? (y/n): ");
-                            if (!scanner.nextLine().trim().toLowerCase().equals("y")) {
+                            String paymentConfirmInput = scanner.nextLine().trim().toLowerCase();
+                            if (paymentConfirmInput.equals("y")) {
+                                break; // Proceed with payment processing
+                            } else if (paymentConfirmInput.equals("n")) {
                                 System.out.println("Payment cancelled.");
-                                continue;
+                                continue; // Return to payment method selection
+                            } else {
+                                System.out.println("Invalid input. Please enter 'y' or 'n'.");
                             }
-
+}
                             PaymentMethod paymentProcessor;
                             Map<String, String> details = new HashMap<>();
                             PaymentMethod.PaymentResult result = null;
@@ -730,7 +739,7 @@ public class Main {
                                 System.out.println("3. Public Bank");
                                 System.out.print("Choose a bank (1-3): ");
                                 String input = scanner.nextLine().trim();
-                                if(input.isEmpty()){
+                                if (input.isEmpty()) {
                                     System.out.println("Input cannot be empty. Please select a bank (1-3).");
                                     continue;
                                 }
@@ -798,7 +807,7 @@ public class Main {
                                 System.out.print("Retry payment? (y/n): ");
                                 if (!scanner.nextLine().trim().toLowerCase().equals("y")) {
                                     System.out.println("Order retained in cart. You can retry later.");
-                                        paymentCompleted = true;
+                                    paymentCompleted = true;
                                 }
                             }
                         }

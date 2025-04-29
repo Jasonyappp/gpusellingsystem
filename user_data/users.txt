@@ -7,7 +7,7 @@
 12,leong1,leong,false,false
 3,yap123,yap1234,false,true
 5,leong,leong,false,false
-10,yap1234,yap123,false,false
+10,yap1234,yap123,false,true
 8,Wong,123456,false,true
 14,wei,11111,false,true
 1,admin_leong,adminpass,true,false
