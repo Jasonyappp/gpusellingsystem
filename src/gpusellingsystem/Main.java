@@ -283,21 +283,35 @@ public class Main {
                                 }
                                 System.out.println("Original name is '" + productToUpdate.getName() + "', enter new name (or press Enter to keep): ");
                                 String newName = scanner.nextLine();
-                                System.out.println("Original price is 'RM" + productToUpdate.getPrice() + "', enter new price (or -1 to keep): ");
-                                double newPrice;
-                                try {
-                                    newPrice = Double.parseDouble(scanner.nextLine());
-                                } catch (NumberFormatException e) {
-                                    System.out.println("Invalid price. Using existing value.");
-                                    newPrice = -1;
+                                System.out.println("Original price is 'RM" + productToUpdate.getPrice() + "', enter new price (or Enter to keep): ");
+                                double newPrice = -1;
+                                String priceInput = scanner.nextLine();
+                                if (!priceInput.isEmpty()) {
+                                    try {
+                                        newPrice = Double.parseDouble(priceInput);
+                                        if (newPrice < 0) {
+                                            System.out.println("Invalid price. Negative values are not allowed.");
+                                            newPrice = -1;
+                                        }
+                                    } catch (NumberFormatException e) {
+                                        System.out.println("Invalid price. Using existing value.");
+                                        newPrice = -1;
+                                    }
                                 }
-                                System.out.println("Original quantity is '" + productToUpdate.getQuantity() + "', enter new quantity (or -1 to keep): ");
-                                int newQuantity;
-                                try {
-                                    newQuantity = Integer.parseInt(scanner.nextLine());
-                                } catch (NumberFormatException e) {
-                                    System.out.println("Invalid quantity. Using existing value.");
-                                    newQuantity = -1;
+                                System.out.println("Original quantity is '" + productToUpdate.getQuantity() + "', enter new quantity (or Enter to keep): ");
+                                int newQuantity = -1;
+                                String quantityInput = scanner.nextLine();
+                                if (!quantityInput.isEmpty()) {
+                                    try {
+                                        newQuantity = Integer.parseInt(quantityInput);
+                                        if (newQuantity < 0 && newQuantity != -1) {
+                                            System.out.println("Invalid quantity. Negative values are not allowed.");
+                                            newQuantity = -1;
+                                        }
+                                    } catch (NumberFormatException e) {
+                                        System.out.println("Invalid quantity. Using existing value.");
+                                        newQuantity = -1;
+                                    }
                                 }
                                 System.out.println("Original detail is '" + productToUpdate.getDetail() + "', enter new detail (or press Enter to keep): ");
                                 String newDetail = scanner.nextLine();
@@ -319,12 +333,12 @@ public class Main {
                                 if (inventory.getProducts().isEmpty()) {
                                     System.out.println("No products available.");
                                 } else {
-                                    System.out.printf("%-8s%-20s%-15s%-15s%-30s%-10s%n", 
+                                    System.out.printf("%-8s%-30s%-15s%-12s%-50s%-10s%n", 
                                         "ID", "Name", "Price", "Quantity", "Detail", "Type");
-                                    System.out.printf("%-8s%-20s%-15s%-15s%-30s%-10s%n", 
-                                        "--", "--------------------", "---------------", "---------------", "------------------------------", "----------");
+                                    System.out.printf("%-8s%-30s%-15s%-12s%-50s%-10s%n", 
+                                        "--------", "------------------------------", "---------------", "------------", "--------------------------------------------------", "----------");
                                     for (Product p : inventory.getProducts().values()) {
-                                        System.out.printf("%-8d%-20sRM%-14.1f%-15d%-30s%-10s%n", 
+                                        System.out.printf("%-8d%-30sRM%-13.2f%-12d%-50s%-10s%n", 
                                             p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(), 
                                             p.getClass().getSimpleName());
                                     }
@@ -358,24 +372,24 @@ public class Main {
                         }
 
                         switch (customerManagementChoice) {
-                            case 1: // 查看所有客户
+                            case 1: // View All Customers
                                 List<Customer> customers = userManager.getAllCustomers();
                                 if (customers.isEmpty()) {
                                     System.out.println("No customers found.");
                                 } else {
-                                    System.out.printf("%-8s%-20s%-20s%-15s%-10s%n", 
+                                    System.out.printf("%-8s%-25s%-25s%-15s%-12s%n", 
                                         "ID", "Username", "Password", "Type", "Discount");
-                                    System.out.printf("%-8s%-20s%-20s%-15s%-10s%n", 
-                                        "--", "--------------------", "--------------------", "---------------", "----------");
+                                    System.out.printf("%-8s%-25s%-25s%-15s%-12s%n", 
+                                        "--------", "-------------------------", "-------------------------", "---------------", "------------");
                                     for (Customer customer : customers) {
                                         String customerType = customer instanceof Member ? "Member" : "NonMember";
-                                        System.out.printf("%-8d%-20s%-20s%-15s%-10.1f%%%n", 
+                                        System.out.printf("%-8d%-25s%-25s%-15s%.1f%%%n", 
                                             customer.getUserId(), customer.getUsername(), customer.getPassword(), 
                                             customerType, customer.getDiscount() * 100);
                                     }
                                 }
                                 break;
-                            case 2: // 删除客户
+                            case 2: // Delete Customer
                                 System.out.print("Enter customer username to delete: ");
                                 String deleteUsername = scanner.nextLine();
                                 if (userManager.deleteCustomer(deleteUsername)) {
@@ -384,7 +398,7 @@ public class Main {
                                     System.out.println("Customer '" + deleteUsername + "' not found or is an admin.");
                                 }
                                 break;
-                            case 3: // 修改客户信息
+                            case 3: // Update Customer
                                 System.out.print("Enter customer username to update: ");
                                 String updateUsername = scanner.nextLine();
                                 Customer customerToUpdate = userManager.searchCustomer(updateUsername);
@@ -394,8 +408,12 @@ public class Main {
                                 }
                                 System.out.println("Current username: " + customerToUpdate.getUsername() + ", enter new username (or press Enter to keep): ");
                                 String newUsername = scanner.nextLine();
-                                System.out.println("Enter new password (or press Enter to keep): ");
+                                System.out.println("Current password: " + customerToUpdate.getPassword() + ", enter new password (or press Enter to keep): ");
                                 String newPassword = scanner.nextLine();
+                                if (!newPassword.isEmpty() && (newPassword.length() < 5 || newPassword.length() > 12)) {
+                                    System.out.println("Password must be between 5 and 12 characters. Update cancelled.");
+                                    break;
+                                }
                                 System.out.println("Current type: " + (customerToUpdate instanceof Member ? "Member" : "NonMember") + ", make member? (y/n): ");
                                 String memberChoice = scanner.nextLine().toLowerCase();
                                 boolean isMember = memberChoice.equals("y");
@@ -405,7 +423,7 @@ public class Main {
                                     System.out.println("Failed to update customer. New username may already exist.");
                                 }
                                 break;
-                            case 4: // 搜索客户
+                            case 4: // Search Customer
                                 System.out.print("Enter customer username to search: ");
                                 String searchUsername = scanner.nextLine();
                                 Customer foundCustomer = userManager.searchCustomer(searchUsername);
@@ -418,7 +436,7 @@ public class Main {
                                     System.out.println("Customer '" + searchUsername + "' not found.");
                                 }
                                 break;
-                            case 5: // 返回管理员页面
+                            case 5: // Back to Admin Page
                                 inCustomerManagementMenu = false;
                                 break;
                             default:
@@ -488,13 +506,13 @@ public class Main {
                             if (filteredProducts.isEmpty()) {
                                 System.out.println("No " + productType + " products available!");
                             } else {
-                                System.out.printf("%-8s%-20s%-15s%-15s%-30s%-15s%-15s%n", 
+                                System.out.printf("%-8s%-30s%-15s%-12s%-50s%-15s%-15s%n", 
                                     "ID", "Name", "Price", "Quantity", "Detail", "Type", "After Discount");
-                                System.out.printf("%-8s%-20s%-15s%-15s%-30s%-15s%-15s%n", 
-                                    "--", "--------------------", "---------------", "---------------", "------------------------------", "---------------", "---------------");
+                                System.out.printf("%-8s%-30s%-15s%-12s%-50s%-15s%-15s%n", 
+                                    "--------", "------------------------------", "---------------", "------------", "--------------------------------------------------", "---------------", "---------------");
                                 for (Product p : filteredProducts) {
                                     double discountedPrice = p.getPrice() * (1 - customer.getDiscount());
-                                    System.out.printf("%-8d%-20sRM%-14.1f%-15d%-30s%-15sRM%-14.1f%n", 
+                                    System.out.printf("%-8d%-30sRM%-13.2f%-12d%-50s%-15sRM%-13.2f%n", 
                                         p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(), 
                                         p.getClass().getSimpleName(), discountedPrice);
                                 }
@@ -668,7 +686,7 @@ public class Main {
 
                     if (orderChoice == 1) {
                         boolean paymentCompleted = false;
-                        while (!paymentCompleted) {
+                        while (paymentCompleted) {
                             System.out.println("\n=== Payment Method ===");
                             System.out.println("1. Online Banking");
                             System.out.println("2. Cash on Delivery");
@@ -779,7 +797,7 @@ public class Main {
                                 System.out.print("Retry payment? (y/n): ");
                                 if (!scanner.nextLine().trim().toLowerCase().equals("y")) {
                                     System.out.println("Order retained in cart. You can retry later.");
-                                    paymentCompleted = true;
+                                        paymentCompleted = true;
                                 }
                             }
                         }
