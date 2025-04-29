@@ -16,13 +16,6 @@ public class ProductManager {
 
     public ProductManager() {
         loadFromFile(); // Load products from file on initialization
-        // If the file was empty or didn't exist, initialize with default products
-        if (products.isEmpty()) {
-            products.put(1, new GPU(1, "RTX1060", 1000.0, 10, "High-performance GPU"));
-            products.put(2, new GPU(2, "RTX2050", 20.0, 50, "Entry-level GPU"));
-            nextProductId = 3; // Update nextProductId after adding default products
-            saveToFile(); // Save the default products to the file
-        }
     }
 
     public boolean addProduct(String name, double price, int quantity, String detail, String type) {
@@ -93,13 +86,13 @@ public class ProductManager {
         products.clear(); // Clear current products to avoid duplicates
         File file = new File(FILE_PATH);
         if (!file.exists()) {
-            return; // File doesn't exist, will initialize with default products
+            return; // File doesn't exist, no products to load
         }
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
-                if (parts.length != 6) { // Now expecting 6 fields including type
+                if (parts.length != 6) { // Expecting 6 fields including type
                     continue; // Skip malformed lines
                 }
                 try {
@@ -127,7 +120,7 @@ public class ProductManager {
                 }
             }
         } catch (IOException e) {
-            // Silently handle IOException
+            System.err.println("Failed to load products from file: " + e.getMessage());
         }
     }
 
@@ -137,7 +130,8 @@ public class ProductManager {
             File dir = new File("inventory_data");
             if (!dir.exists()) {
                 if (!dir.mkdirs()) {
-                    return; // Silently handle directory creation failure
+                    System.err.println("Failed to create directory: " + dir.getAbsolutePath());
+                    return;
                 }
             }
 
@@ -149,7 +143,7 @@ public class ProductManager {
                 }
             }
         } catch (IOException e) {
-            // Silently handle IOException
+            System.err.println("Failed to save products to file: " + e.getMessage());
         }
     }
 }
