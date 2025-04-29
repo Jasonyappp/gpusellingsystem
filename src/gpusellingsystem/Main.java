@@ -666,7 +666,7 @@ public class Main {
                         String confirmInput = scanner.nextLine().trim().toLowerCase();
                         if (confirmInput.equals("y")) {
                             break; // Proceed to Payment Options
-                        } else if (confirmInput.equals("n") || confirmInput.equals("2")) {
+                        } else if (confirmInput.equals("n")) {
                             order.setPaymentStatus("Cancelled");
                             history.addOrder(order);
                             System.out.println("Order cancelled. Returning to menu.");
@@ -676,147 +676,150 @@ public class Main {
                         }
                     }
 
-                    System.out.println("\n=== Payment Options ===");
-                    System.out.println("1. Proceed to Payment");
-                    System.out.println("2. Cancel Order");
-                    System.out.print("Choose an action (1-2): ");
-                    int orderChoice;
-                    try {
-                        orderChoice = Integer.parseInt(scanner.nextLine());
-                    } catch (NumberFormatException e) {
-                        System.out.println("Invalid input. Please enter a number.");
-                        continue;
-                    }
+                    paymentOptions: while (true) {
+                        System.out.println("\n=== Payment Options ===");
+                        System.out.println("1. Proceed to Payment");
+                        System.out.println("2. Cancel Order");
+                        System.out.print("Choose an action (1-2): ");
+                        int orderChoice;
+                        try {
+                            orderChoice = Integer.parseInt(scanner.nextLine());
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid input. Please enter a number.");
+                            continue;
+                        }
 
-                    if (orderChoice == 1) {
-                        boolean paymentCompleted = false;
-                        while (!paymentCompleted) {
-                            System.out.println("\n=== Payment Method ===");
-                            System.out.println("1. Online Banking");
-                            System.out.println("2. Cash on Delivery");
-                            System.out.print("Choose a payment method (1-2): ");
-                            int paymentChoice;
-                            try {
-                                paymentChoice = Integer.parseInt(scanner.nextLine());
-                            } catch (NumberFormatException e) {
-                                System.out.println("Invalid input. Please enter a number (1-2).");
-                                continue;
-                            }
-
-                            String paymentMethod;
-                            if (paymentChoice == 1) {
-                                paymentMethod = "OnlineBanking";
-                            } else if (paymentChoice == 2) {
-                                paymentMethod = "CODPayment";
-                            } else {
-                                System.out.println("Invalid choice. Please select 1 or 2.");
-                                continue;
-                            }
-
-                            double paymentAmount = order.getTotal();
-                            System.out.println("Payment amount: RM " + String.format("%.2f", paymentAmount));
-                           while (true) {
-                            System.out.print("Proceed with payment? (y/n): ");
-                            String paymentConfirmInput = scanner.nextLine().trim().toLowerCase();
-                            if (paymentConfirmInput.equals("y")) {
-                                break; // Proceed with payment processing
-                            } else if (paymentConfirmInput.equals("n")) {
-                                System.out.println("Payment cancelled.");
-                                continue; // Return to payment method selection
-                            } else {
-                                System.out.println("Invalid input. Please enter 'y' or 'n'.");
-                            }
-}
-                            PaymentMethod paymentProcessor;
-                            Map<String, String> details = new HashMap<>();
-                            PaymentMethod.PaymentResult result = null;
-
-                            if (paymentMethod.equalsIgnoreCase("OnlineBanking")) {
-                                paymentProcessor = new OnlineBankingPayment();
-                                System.out.println("\n=== Select Bank ===");
-                                System.out.println("1. Maybank");
-                                System.out.println("2. CIMB");
-                                System.out.println("3. Public Bank");
-                                System.out.print("Choose a bank (1-3): ");
-                                String input = scanner.nextLine().trim();
-                                if (input.isEmpty()) {
-                                    System.out.println("Input cannot be empty. Please select a bank (1-3).");
-                                    continue;
-                                }
-                                int bankChoice;
+                        if (orderChoice == 1) {
+                            boolean paymentCompleted = false;
+                            while (!paymentCompleted) {
+                                System.out.println("\n=== Payment Method ===");
+                                System.out.println("1. Online Banking");
+                                System.out.println("2. Cash on Delivery");
+                                System.out.print("Choose a payment method (1-2): ");
+                                int paymentChoice;
                                 try {
-                                    bankChoice = Integer.parseInt(input);
+                                    paymentChoice = Integer.parseInt(scanner.nextLine());
                                 } catch (NumberFormatException e) {
-                                    System.out.println("Invalid input. Please enter a number (1-3).");
+                                    System.out.println("Invalid input. Please enter a number (1-2).");
                                     continue;
                                 }
 
-                                String bankName;
-                                if (bankChoice == 1) {
-                                    bankName = "Maybank";
-                                } else if (bankChoice == 2) {
-                                    bankName = "CIMB";
-                                } else if (bankChoice == 3) {
-                                    bankName = "Public Bank";
+                                String paymentMethod;
+                                if (paymentChoice == 1) {
+                                    paymentMethod = "OnlineBanking";
+                                } else if (paymentChoice == 2) {
+                                    paymentMethod = "CODPayment";
                                 } else {
-                                    System.out.println("Invalid choice. Please select 1, 2, or 3.");
+                                    System.out.println("Invalid choice. Please select 1 or 2.");
                                     continue;
                                 }
 
-                                System.out.print("Enter bank username: ");
-                                String bankUsername = scanner.nextLine().trim();
-                                System.out.print("Enter bank password: ");
-                                String bankPassword = scanner.nextLine().trim();
-
-                                details.put("bankName", bankName);
-                                details.put("bankUsername", bankUsername);
-                                details.put("bankPassword", bankPassword);
-                                result = paymentProcessor.processPayment(order, customer, paymentAmount, details);
-                            } else if (paymentMethod.equalsIgnoreCase("CODPayment")) {
-                                paymentProcessor = new CODPayment();
-                                System.out.println("\n=== Cash on Delivery ===");
-                                System.out.print("Enter delivery address: ");
-                                String deliveryAddress = scanner.nextLine().trim();
-                                System.out.print("Enter contact information (e.g., phone number): ");
-                                String contactInfo = scanner.nextLine().trim();
-                                details.put("deliveryAddress", deliveryAddress);
-                                details.put("contactInfo", contactInfo);
-                                result = paymentProcessor.processPayment(order, customer, paymentAmount, details);
-                            }
-
-                            try {
-                                if (result.isSuccess()) {
-                                    order.setPaymentStatus(paymentMethod.equalsIgnoreCase("OnlineBanking") ? "Completed" : "Pending");
-                                    history.addOrder(order);
-                                    if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
-                                        System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
+                                double paymentAmount = order.getTotal();
+                                System.out.println("Payment amount: RM " + String.format("%.2f", paymentAmount));
+                                while (true) {
+                                    System.out.print("Proceed with payment? (y/n): ");
+                                    String paymentConfirmInput = scanner.nextLine().trim().toLowerCase();
+                                    if (paymentConfirmInput.equals("y")) {
+                                        break; // Proceed with payment processing
+                                    } else if (paymentConfirmInput.equals("n")) {
+                                        continue paymentOptions; // Return to Payment Options
+                                    } else {
+                                        System.out.println("Invalid input. Please enter 'y' or 'n'.");
                                     }
-                                    System.out.println("\n" + result.getInvoice().toFormattedString());
-                                    cart.clearCart();
-                                    paymentCompleted = true;
-                                } else {
-                                    System.out.println("Payment failed: " + result.getMessage());
+                                }
+
+                                PaymentMethod paymentProcessor;
+                                Map<String, String> details = new HashMap<>();
+                                PaymentMethod.PaymentResult result = null;
+
+                                if (paymentMethod.equalsIgnoreCase("OnlineBanking")) {
+                                    paymentProcessor = new OnlineBankingPayment();
+                                    System.out.println("\n=== Select Bank ===");
+                                    System.out.println("1. Maybank");
+                                    System.out.println("2. CIMB");
+                                    System.out.println("3. Public Bank");
+                                    System.out.print("Choose a bank (1-3): ");
+                                    String input = scanner.nextLine().trim();
+                                    if (input.isEmpty()) {
+                                        System.out.println("Input cannot be empty. Please select a bank (1-3).");
+                                        continue;
+                                    }
+                                    int bankChoice;
+                                    try {
+                                        bankChoice = Integer.parseInt(input);
+                                    } catch (NumberFormatException e) {
+                                        System.out.println("Invalid input. Please enter a number (1-3).");
+                                        continue;
+                                    }
+
+                                    String bankName;
+                                    if (bankChoice == 1) {
+                                        bankName = "Maybank";
+                                    } else if (bankChoice == 2) {
+                                        bankName = "CIMB";
+                                    } else if (bankChoice == 3) {
+                                        bankName = "Public Bank";
+                                    } else {
+                                        System.out.println("Invalid choice. Please select 1, 2, or 3.");
+                                        continue;
+                                    }
+
+                                    System.out.print("Enter bank username: ");
+                                    String bankUsername = scanner.nextLine().trim();
+                                    System.out.print("Enter bank password: ");
+                                    String bankPassword = scanner.nextLine().trim();
+
+                                    details.put("bankName", bankName);
+                                    details.put("bankUsername", bankUsername);
+                                    details.put("bankPassword", bankPassword);
+                                    result = paymentProcessor.processPayment(order, customer, paymentAmount, details);
+                                } else if (paymentMethod.equalsIgnoreCase("CODPayment")) {
+                                    paymentProcessor = new CODPayment();
+                                    System.out.println("\n=== Cash on Delivery ===");
+                                    System.out.print("Enter delivery address: ");
+                                    String deliveryAddress = scanner.nextLine().trim();
+                                    System.out.print("Enter contact information (e.g., phone number): ");
+                                    String contactInfo = scanner.nextLine().trim();
+                                    details.put("deliveryAddress", deliveryAddress);
+                                    details.put("contactInfo", contactInfo);
+                                    result = paymentProcessor.processPayment(order, customer, paymentAmount, details);
+                                }
+
+                                try {
+                                    if (result.isSuccess()) {
+                                        order.setPaymentStatus(paymentMethod.equalsIgnoreCase("OnlineBanking") ? "Completed" : "Pending");
+                                        history.addOrder(order);
+                                        if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
+                                            System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
+                                        }
+                                        System.out.println("\n" + result.getInvoice().toFormattedString());
+                                        cart.clearCart();
+                                        paymentCompleted = true;
+                                    } else {
+                                        System.out.println("Payment failed: " + result.getMessage());
+                                        System.out.print("Retry payment? (y/n): ");
+                                        if (!scanner.nextLine().trim().toLowerCase().equals("y")) {
+                                            System.out.println("Order retained in cart. You can retry later.");
+                                            paymentCompleted = true;
+                                        }
+                                    }
+                                } catch (RuntimeException e) {
+                                    System.out.println("Error processing payment or saving order: " + e.getMessage());
                                     System.out.print("Retry payment? (y/n): ");
                                     if (!scanner.nextLine().trim().toLowerCase().equals("y")) {
                                         System.out.println("Order retained in cart. You can retry later.");
                                         paymentCompleted = true;
                                     }
                                 }
-                            } catch (RuntimeException e) {
-                                System.out.println("Error processing payment or saving order: " + e.getMessage());
-                                System.out.print("Retry payment? (y/n): ");
-                                if (!scanner.nextLine().trim().toLowerCase().equals("y")) {
-                                    System.out.println("Order retained in cart. You can retry later.");
-                                    paymentCompleted = true;
-                                }
                             }
+                        } else if (orderChoice == 2) {
+                            order.setPaymentStatus("Cancelled");
+                            history.addOrder(order);
+                            System.out.println("Order cancelled. Items remain in your cart.");
+                            break;
+                        } else {
+                            System.out.println("Invalid action! Please choose 1 or 2.");
                         }
-                    } else if (orderChoice == 2) {
-                        order.setPaymentStatus("Cancelled");
-                        history.addOrder(order);
-                        System.out.println("Order cancelled. Items remain in your cart.");
-                    } else {
-                        System.out.println("Invalid action! Please choose 1 or 2.");
                     }
                     break;
                 case 4:
