@@ -1,3 +1,4 @@
+
 package gpusellingsystem;
 
 import java.util.ArrayList;
@@ -494,7 +495,7 @@ public class Main {
                             continue;
                         }
 
-                          if (viewChoice == 1 || viewChoice == 2) {
+                        if (viewChoice == 1 || viewChoice == 2) {
                             List<Product> filteredProducts = new ArrayList<>();
                             String productType = viewChoice == 1 ? "GPU" : "CPU";
                             for (Product p : Product.getAllProducts(inventory)) {
@@ -701,22 +702,27 @@ public class Main {
                                 System.out.println("\n=== Payment Method ===");
                                 System.out.println("1. Online Banking");
                                 System.out.println("2. Cash on Delivery");
-                                System.out.print("Choose a payment method (1-2): ");
+                                System.out.println("3. Back to Payment Options");
+                                System.out.print("Choose a payment method (1-3): ");
                                 int paymentChoice;
                                 try {
                                     paymentChoice = Integer.parseInt(scanner.nextLine());
                                 } catch (NumberFormatException e) {
-                                    System.out.println("Invalid input. Please enter a number (1-2).");
+                                    System.out.println("Invalid input. Please enter a number (1-3).");
                                     continue;
+                                }
+
+                                if (paymentChoice == 3) {
+                                    continue paymentOptions; // 返回到 Payment Options 菜单
                                 }
 
                                 String paymentMethod;
                                 if (paymentChoice == 1) {
-                                    paymentMethod = "OnlineBanking";
+                                    paymentMethod = "Online Banking";
                                 } else if (paymentChoice == 2) {
-                                    paymentMethod = "CODPayment";
+                                    paymentMethod = "Cash on Delivery";
                                 } else {
-                                    System.out.println("Invalid choice. Please select 1 or 2.");
+                                    System.out.println("Invalid choice. Please select 1, 2, or 3.");
                                     continue;
                                 }
 
@@ -726,9 +732,9 @@ public class Main {
                                     System.out.print("Proceed with payment? (y/n): ");
                                     String paymentConfirmInput = scanner.nextLine().trim().toLowerCase();
                                     if (paymentConfirmInput.equals("y")) {
-                                        break; // Proceed with payment processing
+                                        break; // 继续处理支付
                                     } else if (paymentConfirmInput.equals("n")) {
-                                        continue paymentOptions; // Return to Payment Options
+                                        continue paymentOptions; // 返回到 Payment Options 菜单
                                     } else {
                                         System.out.println("Invalid input. Please enter 'y' or 'n'.");
                                     }
@@ -738,7 +744,7 @@ public class Main {
                                 Map<String, String> details = new HashMap<>();
                                 PaymentMethod.PaymentResult result = null;
 
-                                if (paymentMethod.equalsIgnoreCase("OnlineBanking")) {
+                                if (paymentMethod.equalsIgnoreCase("Online Banking")) {
                                     paymentProcessor = new OnlineBankingPayment();
                                     System.out.println("\n=== Select Bank ===");
                                     System.out.println("1. Maybank");
@@ -779,42 +785,62 @@ public class Main {
                                     details.put("bankUsername", bankUsername);
                                     details.put("bankPassword", bankPassword);
                                     result = paymentProcessor.processPayment(order, customer, paymentAmount, details);
-                                } else if (paymentMethod.equalsIgnoreCase("CODPayment")) {
-                                    paymentProcessor = new CODPayment();
-                                    System.out.println("\n=== Cash on Delivery ===");
-                                    System.out.print("Enter delivery address: ");
-                                    String deliveryAddress = scanner.nextLine().trim();
-                                    System.out.print("Enter contact information (e.g., phone number): ");
-                                    String contactInfo = scanner.nextLine().trim();
-                                    details.put("deliveryAddress", deliveryAddress);
-                                    details.put("contactInfo", contactInfo);
-                                    result = paymentProcessor.processPayment(order, customer, paymentAmount, details);
-                                }
 
-                                try {
-                                    if (result.isSuccess()) {
-                                        order.setPaymentStatus(paymentMethod.equalsIgnoreCase("OnlineBanking") ? "Completed" : "Pending");
-                                        history.addOrder(order);
-                                        if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
-                                            System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
+                                    try {
+                                        if (result.isSuccess()) {
+                                            order.setPaymentStatus("Completed");
+                                            history.addOrder(order);
+                                            if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
+                                                System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
+                                            }
+                                            System.out.println("\n" + result.getInvoice().toFormattedString());
+                                            cart.clearCart();
+                                            paymentCompleted = true;
+                                            break paymentOptions; // 跳出 paymentOptions 循环
+                                        } else {
+                                            System.out.println("Payment failed: " + result.getMessage());
+                                            System.out.print("Retry payment? (y/n): ");
+                                            if (!scanner.nextLine().trim().toLowerCase().equals("y")) {
+                                                System.out.println("Order retained in cart. You can retry later.");
+                                                paymentCompleted = true;
+                                            }
                                         }
-                                        System.out.println("\n" + result.getInvoice().toFormattedString());
-                                        cart.clearCart();
-                                        paymentCompleted = true;
-                                    } else {
-                                        System.out.println("Payment failed: " + result.getMessage());
+                                    } catch (RuntimeException e) {
+                                        System.out.println("Error processing payment or saving order: " + e.getMessage());
                                         System.out.print("Retry payment? (y/n): ");
                                         if (!scanner.nextLine().trim().toLowerCase().equals("y")) {
                                             System.out.println("Order retained in cart. You can retry later.");
                                             paymentCompleted = true;
                                         }
                                     }
-                                } catch (RuntimeException e) {
-                                    System.out.println("Error processing payment or saving order: " + e.getMessage());
-                                    System.out.print("Retry payment? (y/n): ");
-                                    if (!scanner.nextLine().trim().toLowerCase().equals("y")) {
-                                        System.out.println("Order retained in cart. You can retry later.");
-                                        paymentCompleted = true;
+                                } else if (paymentMethod.equalsIgnoreCase("Cash on Delivery")) {
+                                    paymentProcessor = new CODPayment();
+                                    boolean codPaymentCompleted = false;
+                                    while (!codPaymentCompleted) {
+                                        System.out.println("\n=== Cash on Delivery ===");
+                                        System.out.print("Enter delivery address: ");
+                                        String deliveryAddress = scanner.nextLine().trim();
+                                        System.out.print("Enter contact information (10 to 15 digit phone number): ");
+                                        String contactInfo = scanner.nextLine().trim();
+                                        details.put("deliveryAddress", deliveryAddress);
+                                        details.put("contactInfo", contactInfo);
+                                        result = paymentProcessor.processPayment(order, customer, paymentAmount, details);
+
+                                        if (result.isSuccess()) {
+                                            order.setPaymentStatus("Pending");
+                                            history.addOrder(order);
+                                            if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
+                                                System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
+                                            }
+                                            System.out.println("\n" + result.getInvoice().toFormattedString());
+                                            cart.clearCart();
+                                            codPaymentCompleted = true;
+                                            paymentCompleted = true;
+                                            break paymentOptions; // 跳出 paymentOptions 循环
+                                        } else {
+                                            System.out.println("Payment failed: " + result.getMessage());
+                                            // 继续循环，重新提示输入
+                                        }
                                     }
                                 }
                             }

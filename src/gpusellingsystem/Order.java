@@ -9,54 +9,54 @@ import java.util.ArrayList;
 public class Order implements Serializable {
     private static final long serialVersionUID = 1L;
     private static int nextOrderId = 1000; // Start Order IDs at 1000 to avoid overlap with Product IDs
-    private final int orderId;
-    private final String username;
-    private final List<CartItem> items;
-    private final double total; // Only keep total, remove discountedTotal
-    private final LocalDate orderDate;
+    private final int ORDER_ID;
+    private final String USERNAME;
+    private final List<CartItem> ITEMS;
+    private final double TOTAL; // Only keep total, remove discountedTotal
+    private final LocalDate ORDER_DATE;
     private String paymentStatus;
 
     public Order(Cart cart, Customer customer) {
-        this.orderId = nextOrderId++;
-        this.username = customer.getUsername();
+        this.ORDER_ID = nextOrderId++;
+        this.USERNAME = customer.getUsername();
         // Deep copy items to prevent modifications after order creation
-        this.items = new ArrayList<>();
+        this.ITEMS = new ArrayList<>();
         for (CartItem item : cart.getItems()) {
-            this.items.add(new CartItem(item.getProduct(), item.getQuantity()));
+            this.ITEMS.add(new CartItem(item.getProduct(), item.getQuantity()));
         }
-        this.total = cart.getTotal();
-        this.orderDate = LocalDate.now();
+        this.TOTAL = cart.getTotal();
+        this.ORDER_DATE = LocalDate.now();
         this.paymentStatus = "Pending";
     }
 
     // New constructor for loading from file
     public Order(int orderId, String username, Cart cart, LocalDate orderDate, double total) {
-        this.orderId = orderId;
-        this.username = username;
+        this.ORDER_ID = orderId;
+        this.USERNAME = username;
         // Deep copy items from cart
-        this.items = new ArrayList<>();
+        this.ITEMS = new ArrayList<>();
         for (CartItem item : cart.getItems()) {
-            this.items.add(new CartItem(item.getProduct(), item.getQuantity()));
+            this.ITEMS.add(new CartItem(item.getProduct(), item.getQuantity()));
         }
-        this.total = total;
-        this.orderDate = orderDate;
+        this.TOTAL = total;
+        this.ORDER_DATE = orderDate;
         this.paymentStatus = "Unknown";
     }
 
     public int getOrderId() {
-        return orderId;
+        return ORDER_ID;
     }
 
     public String getUsername() {
-        return username;
+        return USERNAME;
     }
 
     public List<CartItem> getItems() {
-        return new ArrayList<>(items); // Return defensive copy
+        return new ArrayList<>(ITEMS); // Return defensive copy
     }
 
     public double getTotal() {
-        return total;
+        return TOTAL;
     }
     
     public void setPaymentStatus(String paymentStatus) {
@@ -68,14 +68,14 @@ public class Order implements Serializable {
     }
 
     public LocalDate getOrderDate() {
-        return orderDate;
+        return ORDER_DATE;
     }
 
     // 修改后的 getCart 方法：直接构造 Cart，不触发库存更新
     public Cart getCart() {
-        Cart cart = new Cart(username);
+        Cart cart = new Cart(USERNAME);
         cart.clearItems(); // 清空默认加载的 items
-        for (CartItem item : items) {
+        for (CartItem item : ITEMS) {
             cart.addItemDirectly(new CartItem(item.getProduct(), item.getQuantity()));
         }
         return cart;
@@ -89,25 +89,31 @@ public class Order implements Serializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("==================================================\n");
-        sb.append("Order ID: ").append(orderId).append("\n");
-        sb.append("Username: ").append(username).append("\n");
-        sb.append("Order Date: ").append(orderDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))).append("\n");
-        sb.append("--------------------------------------------------\n");
+        // 标题和分隔线
+        sb.append("==============================================================\n");
+        sb.append("                      Order Confirmation                      \n");
+        sb.append("==============================================================\n");
+        // 订单基本信息
+        sb.append(String.format("Order ID: %-10d\n", ORDER_ID));
+        sb.append(String.format("Username: %-20s\n", USERNAME));
+        sb.append(String.format("Order Date: %-15s\n", ORDER_DATE.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
+        sb.append("--------------------------------------------------------------\n");
+        // 物品列表表头
         sb.append("Items:\n");
-        sb.append(String.format("%-8s%-20s%-15s%-15s%-15s\n", 
-            "ID", "Name", "Unit Price", "Quantity", "Subtotal"));
-        sb.append(String.format("%-8s%-20s%-15s%-15s%-15s\n", 
-            "--", "--------------------", "---------------", "---------------", "---------------"));
-        for (CartItem item : items) {
+        sb.append(String.format("%-8s%-30s%-15s%-10s%-15s\n", 
+                "ID", "Name", "Unit Price", "Quantity", "Subtotal"));
+        sb.append("--------+------------------------------+---------------+----------+---------------\n");
+        // 物品详情
+        for (CartItem item : ITEMS) {
             Product p = item.getProduct();
             double subtotal = p.getPrice() * item.getQuantity();
-            sb.append(String.format("%-8d%-20sRM%-14.2f%-15dRM%-14.2f\n", 
-                p.getProductId(), p.getName(), p.getPrice(), item.getQuantity(), subtotal));
+            sb.append(String.format("%-8d%-30sRM%-13.2f%-10dRM%-13.2f\n", 
+                    p.getProductId(), p.getName(), p.getPrice(), item.getQuantity(), subtotal));
         }
-        sb.append("--------------------------------------------------\n");
-        sb.append(String.format("Total: RM %.2f\n", total)); 
-        sb.append("==================================================\n");
+        // 总计和底部分隔线
+        sb.append("--------------------------------------------------------------\n");
+        sb.append(String.format("%-63sRM%-13.2f\n", "Total:", TOTAL));
+        sb.append("==============================================================\n");
         return sb.toString();
     }
 }

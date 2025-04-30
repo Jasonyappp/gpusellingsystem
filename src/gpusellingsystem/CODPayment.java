@@ -24,6 +24,10 @@ public class CODPayment extends PaymentMethod {
         if (deliveryAddress == null || deliveryAddress.isEmpty() || contactInfo == null || contactInfo.isEmpty()) {
             return new PaymentResult(false, "Delivery address or contact information cannot be empty!", null);
         }
+        
+        if (!contactInfo.matches("\\d{10,15}")) {
+        return new PaymentResult(false, "Contact information must contain only numbers!", null);
+    }
 
         LocalDate deliveryDate = LocalDate.now().plusDays(3);
         Invoice invoice = new Invoice(order, customer, "cod_payment", false, null, null, deliveryAddress, contactInfo, deliveryDate);

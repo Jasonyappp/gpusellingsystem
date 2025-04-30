@@ -1,1 +1,11 @@
 1001,Chong,2025-04-29,1800.00,Cancelled
+1002,Chong,2025-04-30,7200.00,Completed
+1003,Chong,2025-04-30,1800.00,Pending
+1004,Chong,2025-04-30,1800.00,Cancelled
+1005,Chong,2025-04-30,1800.00,Pending
+1006,Chong,2025-04-30,1800.00,Completed
+1007,Chong,2025-04-30,1800.00,Completed
+1008,Chong,2025-04-30,1800.00,Pending
+1009,Chong,2025-04-30,45000.00,Completed
+1010,Chong,2025-04-30,10000.00,Cancelled
+1011,Chong,2025-04-30,11800.00,Cancelled

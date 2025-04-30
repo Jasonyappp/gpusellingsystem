@@ -11,26 +11,26 @@ import java.time.LocalDate;
  */
 public abstract class PaymentMethod {
     public static class PaymentResult {
-        private final boolean success;
-        private final String message;
-        private final Invoice invoice;
+        private final boolean SUCCESS;
+        private final String MESSAGE;
+        private final Invoice INVOICE;
 
         public PaymentResult(boolean success, String message, Invoice invoice) {
-            this.success = success;
-            this.message = message;
-            this.invoice = invoice;
+            this.SUCCESS = success;
+            this.MESSAGE = message;
+            this.INVOICE = invoice;
         }
 
         public boolean isSuccess() {
-            return success;
+            return SUCCESS;
         }
 
         public String getMessage() {
-            return message;
+            return MESSAGE;
         }
 
         public Invoice getInvoice() {
-            return invoice;
+            return INVOICE;
         }
     }
 
