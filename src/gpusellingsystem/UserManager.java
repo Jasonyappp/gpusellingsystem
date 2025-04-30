@@ -33,26 +33,35 @@ public class UserManager {
         if (user == null || user.isAdmin()) { // 不允许修改不存在的用户或管理员
             return false;
         }
+
+        // 确定最终用户名
+        String finalUsername = oldUsername;
         if (newUsername != null && !newUsername.trim().isEmpty() && !newUsername.equals(oldUsername)) {
             if (User.getUsers().containsKey(newUsername)) {
                 return false; // 新用户名已存在
             }
-            User.getUsers().remove(oldUsername); // 删除旧用户名
-            user = newUsername.equals(user.getUsername()) ? user : (isMember ? new Member(user.getUserId(), newUsername, user.getPassword()) : new NonMember(user.getUserId(), newUsername, user.getPassword()));
-            User.getUsers().put(newUsername, user);
+            finalUsername = newUsername;
         }
+
+        // 更新密码
+        String finalPassword = user.getPassword();
         if (newPassword != null && !newPassword.trim().isEmpty()) {
-            user.resetPassword(newPassword);
+            finalPassword = newPassword;
         }
-        if (user instanceof Member && !isMember) {
-            // 从 Member 降级为 NonMember
-            User newUser = new NonMember(user.getUserId(), user.getUsername(), user.getPassword());
-            User.getUsers().put(user.getUsername(), newUser);
-        } else if (user instanceof NonMember && isMember) {
-            // 从 NonMember 升级为 Member
-            User newUser = new Member(user.getUserId(), user.getUsername(), user.getPassword());
-            User.getUsers().put(user.getUsername(), newUser);
+
+        // 创建新用户对象，基于会员状态
+        User newUser;
+        if (isMember) {
+            newUser = new Member(user.getUserId(), finalUsername, finalPassword);
+        } else {
+            newUser = new NonMember(user.getUserId(), finalUsername, finalPassword);
         }
+
+        // 更新用户映射
+        if (!finalUsername.equals(oldUsername)) {
+            User.getUsers().remove(oldUsername);
+        }
+        User.getUsers().put(finalUsername, newUser);
         User.saveUsersToFile(); // 更新 user_data/users.txt
         return true;
     }
@@ -67,13 +76,11 @@ public class UserManager {
     }
     
     public boolean upgradeToMember(String username){
-    
-        User user =User.getUsers().get(username);
-        if(user == null || user.isAdmin() || user instanceof Member){
-        
+        User user = User.getUsers().get(username);
+        if (user == null || user.isAdmin() || user instanceof Member) {
             return false;
         }
-        User newUser = new Member(user.getUserId(),user.getUsername(), user.getPassword());
+        User newUser = new Member(user.getUserId(), user.getUsername(), user.getPassword());
         User.getUsers().put(username, newUser);
         User.saveUsersToFile();
         return true;

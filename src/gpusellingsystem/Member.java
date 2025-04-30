@@ -4,10 +4,6 @@
  */
 package gpusellingsystem;
 
-/**
- *
- * @author chong
- */
 public class Member extends Customer {
     public Member(int userId, String username, String password) {
         super(userId, username, password);

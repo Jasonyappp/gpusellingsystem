@@ -4,10 +4,6 @@
  */
 package gpusellingsystem;
 
-/**
- *
- * @author chong
- */
 public class CPU extends Product {
     
     private static final long serialVersionUID = 1L;

@@ -4,10 +4,6 @@
  */
 package gpusellingsystem;
 
-/**
- *
- * @author chong
- */
 public class GPU extends Product {
     
     private static final long serialVersionUID = 1L;
