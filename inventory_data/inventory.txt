@@ -2,7 +2,7 @@
 4,AMD Ryzen 7 5800X,1500.00,70,Efficient 8-core CPU for multitasking,CPU
 5,Intel Core i5-12400F,800.00,70,Budget-friendly CPU for mid-range builds,CPU
 6,AMD Ryzen 9 5950X,3200.00,70,16-core CPU for professional workloads,CPU
-7,NVIDIA GeForce RTX 3060,1800.00,31,Mid-range GPU for 1080p and 1440p gaming,GPU
+7,NVIDIA GeForce RTX 3060,1800.00,23,Mid-range GPU for 1080p and 1440p gaming,GPU
 8,AMD Radeon RX 6700 XT,2000.00,60,Powerful GPU for high-frame-rate gaming,GPU
 9,NVIDIA GeForce GTX 1660 Super,1000.00,60,Entry-level GPU for budget gamers,GPU
-10,AMD Radeon RX 7900 XTX,4500.00,60,Flagship GPU for 4K gaming and content creation,GPU
+10,AMD Radeon RX 7900 XTX,4500.00,57,Flagship GPU for 4K gaming and content creation,GPU

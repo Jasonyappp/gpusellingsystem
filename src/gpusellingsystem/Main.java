@@ -833,6 +833,8 @@ public class Main {
                                         if (result.isSuccess()) {
                                             order.setPaymentStatus("Pending");
                                             order.setPaymentMethod("cod_payment");
+                                            order.setDeliveryAddress(deliveryAddress);
+                                            order.setContactInfo(contactInfo);
                                             history.addOrder(order);
                                             if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
                                                 System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
@@ -927,7 +929,8 @@ public class Main {
                                             } else {
                                                 // Assume COD for Pending
                                                 invoice = new Invoice(selectedOrder, customer, "cod_payment", false, null, null,
-                                                                     "Unknown", "Unknown", LocalDate.now().plusDays(3));
+                                                                     selectedOrder.getDeliveryAddress(), selectedOrder.getContactInfo(),
+                                                                     LocalDate.now().plusDays(3));
                                             }
                                             System.out.println("\n" + invoice.toFormattedString());
                                         }

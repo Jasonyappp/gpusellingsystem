@@ -15,10 +15,12 @@ public class Order implements Serializable {
     private final double TOTAL; // Only keep total, remove discountedTotal
     private final LocalDate ORDER_DATE;
     private String paymentStatus;
-    private String paymentMethod; // 新增：支付方式（"online_banking" 或 "cod_payment"）
-    private String bankName;     // 新增：银行名称（仅在线支付）
-    private String bankUsername; // 新增：银行用户名（仅在线支付）
-    private double bankDiscount;  // 新增：银行折扣（仅在线支付）
+    private String paymentMethod; // 支付方式（"online_banking" 或 "cod_payment"）
+    private String bankName;     // 银行名称（仅在线支付）
+    private String bankUsername; // 银行用户名（仅在线支付）
+    private double bankDiscount;  // 银行折扣（仅在线支付）
+    private String deliveryAddress; // 配送地址（仅COD）
+    private String contactInfo;    // 联系信息（仅COD）
 
     public Order(Cart cart, Customer customer) {
         this.ORDER_ID = nextOrderId++;
@@ -35,11 +37,14 @@ public class Order implements Serializable {
         this.bankName = null;
         this.bankUsername = null;
         this.bankDiscount = 0.0;
+        this.deliveryAddress = null;
+        this.contactInfo = null;
     }
 
     // New constructor for loading from file
     public Order(int orderId, String username, Cart cart, LocalDate orderDate, double total,
-                 String paymentStatus, String paymentMethod, String bankName, String bankUsername, double bankDiscount) {
+                 String paymentStatus, String paymentMethod, String bankName, String bankUsername, 
+                 double bankDiscount, String deliveryAddress, String contactInfo) {
         this.ORDER_ID = orderId;
         this.USERNAME = username;
         // Deep copy items from cart
@@ -54,6 +59,8 @@ public class Order implements Serializable {
         this.bankName = bankName;
         this.bankUsername = bankUsername;
         this.bankDiscount = bankDiscount;
+        this.deliveryAddress = deliveryAddress;
+        this.contactInfo = contactInfo;
     }
 
     public int getOrderId() {
@@ -116,6 +123,22 @@ public class Order implements Serializable {
         this.bankDiscount = bankDiscount;
     }
 
+    public String getDeliveryAddress() {
+        return deliveryAddress;
+    }
+
+    public void setDeliveryAddress(String deliveryAddress) {
+        this.deliveryAddress = deliveryAddress;
+    }
+
+    public String getContactInfo() {
+        return contactInfo;
+    }
+
+    public void setContactInfo(String contactInfo) {
+        this.contactInfo = contactInfo;
+    }
+
     // Synchronize nextOrderId with OrderHistory
     public static void setNextOrderId(int id) {
         nextOrderId = Math.max(nextOrderId, id);
@@ -157,11 +180,16 @@ public class Order implements Serializable {
         // 总计和底部分隔线
         sb.append("--------------------------------------------------------------\n");
         sb.append(String.format("%-63sRM%-13.2f\n", "Total:", TOTAL));
-        if (paymentMethod != null && paymentMethod.equals("online_banking")) {
+        if (paymentMethod != null) {
             sb.append(String.format("Payment Method: %s\n", paymentMethod));
-            sb.append(String.format("Bank: %s\n", bankName != null ? bankName : "Unknown"));
-            sb.append(String.format("Bank Username: %s\n", bankUsername != null ? bankUsername : "Unknown"));
-            sb.append(String.format("Bank Discount: %.1f%%\n", bankDiscount * 100));
+            if (paymentMethod.equals("online_banking")) {
+                sb.append(String.format("Bank: %s\n", bankName != null ? bankName : "Unknown"));
+                sb.append(String.format("Bank Username: %s\n", bankUsername != null ? bankUsername : "Unknown"));
+                sb.append(String.format("Bank Discount: %.1f%%\n", bankDiscount * 100));
+            } else if (paymentMethod.equals("cod_payment")) {
+                sb.append(String.format("Delivery Address: %s\n", deliveryAddress != null ? deliveryAddress : "Unknown"));
+                sb.append(String.format("Contact Info: %s\n", contactInfo != null ? contactInfo : "Unknown"));
+            }
         }
         sb.append("==============================================================\n");
         return sb.toString();

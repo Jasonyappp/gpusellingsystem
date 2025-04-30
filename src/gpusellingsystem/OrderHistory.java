@@ -58,7 +58,7 @@ public class OrderHistory {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
-                if (parts.length != 5 && parts.length != 9) { // 支持旧格式（5字段）和新格式（9字段）
+                if (parts.length != 5 && parts.length != 9 && parts.length != 11) { // 支持旧格式和新格式
                     continue;
                 }
                 int orderId = Integer.parseInt(parts[0]);
@@ -69,19 +69,32 @@ public class OrderHistory {
 
                 Cart cart = new Cart(username);
                 cart.clearItems();
-                
+
                 if (parts.length == 5) {
                     // 旧格式：没有支付细节
-                    Order order = new Order(orderId, username, cart, orderDate, total, paymentStatus, null, null, null, 0.0);
+                    Order order = new Order(orderId, username, cart, orderDate, total, paymentStatus, 
+                                            null, null, null, 0.0, null, null);
                     orders.add(order);
-                } else {
-                    // 新格式：包含支付细节
+                } else if (parts.length == 9) {
+                    // 中间格式：只有在线支付细节
                     String paymentMethod = parts[5].isEmpty() ? null : parts[5];
                     String bankName = parts[6].isEmpty() ? null : parts[6];
                     String bankUsername = parts[7].isEmpty() ? null : parts[7];
                     double bankDiscount = Double.parseDouble(parts[8]);
                     Order order = new Order(orderId, username, cart, orderDate, total, paymentStatus, 
-                                           paymentMethod, bankName, bankUsername, bankDiscount);
+                                            paymentMethod, bankName, bankUsername, bankDiscount, null, null);
+                    orders.add(order);
+                } else {
+                    // 新格式：包含在线支付和COD支付细节
+                    String paymentMethod = parts[5].isEmpty() ? null : parts[5];
+                    String bankName = parts[6].isEmpty() ? null : parts[6];
+                    String bankUsername = parts[7].isEmpty() ? null : parts[7];
+                    double bankDiscount = Double.parseDouble(parts[8]);
+                    String deliveryAddress = parts[9].isEmpty() ? null : parts[9];
+                    String contactInfo = parts[10].isEmpty() ? null : parts[10];
+                    Order order = new Order(orderId, username, cart, orderDate, total, paymentStatus, 
+                                            paymentMethod, bankName, bankUsername, bankDiscount, 
+                                            deliveryAddress, contactInfo);
                     orders.add(order);
                 }
                 Order.setNextOrderId(orderId + 1);
@@ -104,7 +117,7 @@ public class OrderHistory {
             String filePath = "order_data/" + username + "_orders.txt";
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
                 for (Order order : orders) {
-                    writer.write(String.format("%d,%s,%s,%.2f,%s,%s,%s,%s,%.2f",
+                    writer.write(String.format("%d,%s,%s,%.2f,%s,%s,%s,%s,%.2f,%s,%s",
                         order.getOrderId(),
                         order.getUsername(),
                         order.getOrderDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
@@ -113,7 +126,9 @@ public class OrderHistory {
                         order.getPaymentMethod() != null ? order.getPaymentMethod() : "",
                         order.getBankName() != null ? order.getBankName() : "",
                         order.getBankUsername() != null ? order.getBankUsername() : "",
-                        order.getBankDiscount()));
+                        order.getBankDiscount(),
+                        order.getDeliveryAddress() != null ? order.getDeliveryAddress() : "",
+                        order.getContactInfo() != null ? order.getContactInfo() : ""));
                     writer.newLine();
                 }
             }
@@ -138,4 +153,4 @@ public class OrderHistory {
         }
         return sb.toString();
     }
-}//haha
+}
