@@ -319,15 +319,21 @@ public class Main {
                                 System.out.println("Product with ID " + updateId + " updated successfully.");
                                 break;
                             case 4: // Search Product
-                                System.out.print("Enter product name to search: ");
-                                String searchName = scanner.nextLine();
-                                Product product = inventory.searchProduct(searchName);
-                                if (product != null) {
-                                    System.out.println("Found: " + product);
-                                } else {
-                                    System.out.println("Product with name '" + searchName + "' not found.");
-                                }
+                            System.out.print("Enter product ID to search: ");
+                            int searchId;
+                            try {
+                                searchId = Integer.parseInt(scanner.nextLine());
+                            } catch (NumberFormatException e) {
+                                System.out.println("Invalid product ID. Please enter a valid number.");
                                 break;
+                            }
+                            Product product = inventory.searchProductById(searchId);
+                            if (product != null) {
+                                System.out.println("Found: " + product);
+                            } else {
+                                System.out.println("Product with ID " + searchId + " not found.");
+                            }
+                            break;
                             case 5: // View Product Listing
                                 System.out.println("\nProduct Listing:");
                                 if (inventory.getProducts().isEmpty()) {
@@ -488,7 +494,7 @@ public class Main {
                             continue;
                         }
 
-                        if (viewChoice == 1 || viewChoice == 2) {
+                          if (viewChoice == 1 || viewChoice == 2) {
                             List<Product> filteredProducts = new ArrayList<>();
                             String productType = viewChoice == 1 ? "GPU" : "CPU";
                             for (Product p : Product.getAllProducts(inventory)) {
@@ -501,15 +507,14 @@ public class Main {
                             if (filteredProducts.isEmpty()) {
                                 System.out.println("No " + productType + " products available!");
                             } else {
-                                System.out.printf("%-8s%-30s%-15s%-12s%-50s%-15s%-15s%n", 
-                                    "ID", "Name", "Price", "Quantity", "Detail", "Type", "After Discount");
-                                System.out.printf("%-8s%-30s%-15s%-12s%-50s%-15s%-15s%n", 
-                                    "--------", "------------------------------", "---------------", "------------", "--------------------------------------------------", "---------------", "---------------");
+                                System.out.printf("%-8s%-30s%-15s%-12s%-50s%-15s%n", 
+                                    "ID", "Name", "Price", "Quantity", "Detail", "Type");
+                                System.out.printf("%-8s%-30s%-15s%-12s%-50s%-15s%n", 
+                                    "--------", "------------------------------", "---------------", "------------", "--------------------------------------------------", "---------------");
                                 for (Product p : filteredProducts) {
-                                    double discountedPrice = p.getPrice() * (1 - customer.getDiscount());
-                                    System.out.printf("%-8d%-30sRM%-13.2f%-12d%-50s%-15sRM%-13.2f%n", 
+                                    System.out.printf("%-8d%-30sRM%-13.2f%-12d%-50s%-15s%n", 
                                         p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(), 
-                                        p.getClass().getSimpleName(), discountedPrice);
+                                        p.getClass().getSimpleName());
                                 }
                             }
 
@@ -517,6 +522,7 @@ public class Main {
                             System.out.println("1. Add Item to Cart");
                             System.out.println("2. Back to View Products Menu");
                             System.out.print("Choose an action: ");
+                        
                             int productChoice;
                             try {
                                 productChoice = Integer.parseInt(scanner.nextLine());
@@ -574,7 +580,6 @@ public class Main {
                     }
                     break;
                 case 2:
-                    System.out.println("\n=== Your Cart ===");
                     if (cart.getItems().isEmpty()) {
                         System.out.println("Your cart is empty!");
                         break;
@@ -639,6 +644,7 @@ public class Main {
                                 }
                             }
                             System.out.println("Cart cleared successfully.");
+                            break;
                         } else if (cartChoice == 3) {
                             break;
                         } else {

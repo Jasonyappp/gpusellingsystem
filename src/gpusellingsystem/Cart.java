@@ -176,20 +176,25 @@ public class Cart implements Serializable {
     }
 
     @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        if (items.isEmpty()) {
-            return "Your cart is empty!";
-        }
-        // Add header
-        sb.append(String.format("%-8s%-20s%-15s%-15s\n", 
-            "ID", "ProductName", "Price", "Quantity"));
-        for (CartItem item : items) {
-            Product p = item.getProduct();
-            sb.append(String.format("%-8d%-20sRM%-14.2f%-15d\n", 
-                p.getProductId(), p.getName(), p.getPrice(), item.getQuantity()));
-        }
-        sb.append("Total: RM").append(String.format("%.2f", getTotal()));
-        return sb.toString();
+public String toString() {
+    StringBuilder sb = new StringBuilder();
+    if (items.isEmpty()) {
+        return "Your cart is empty!";
     }
+    // Add header
+    sb.append("=== Your Cart ===\n");
+    sb.append(String.format("%-8s%-30s%-15s%-10s%-15s\n", 
+        "ID", "Product Name", "Unit Price", "Quantity", "Subtotal"));
+    sb.append(String.format("%-8s%-30s%-15s%-10s%-15s\n", 
+        "--------", "------------------------------", "---------------", "----------", "---------------"));
+    for (CartItem item : items) {
+        Product p = item.getProduct();
+        double subtotal = p.getPrice() * item.getQuantity();
+        sb.append(String.format("%-8d%-30sRM%-13.2f%-10dRM%-13.2f\n", 
+            p.getProductId(), p.getName(), p.getPrice(), item.getQuantity(), subtotal));
+    }
+    sb.append("-------------------------------------------------------------\n");
+    sb.append(String.format("%-63sRM%-13.2f\n", "Total:", getTotal()));
+    return sb.toString();
+}
 }

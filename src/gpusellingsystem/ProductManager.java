@@ -77,6 +77,10 @@ public class ProductManager {
         }
         return null;
     }
+    
+     public Product searchProductById(int productId) {
+        return products.get(productId);
+    }
 
     public Map<Integer, Product> getProducts() {
         return products;
