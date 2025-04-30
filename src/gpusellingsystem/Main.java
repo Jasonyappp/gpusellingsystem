@@ -593,7 +593,7 @@ public class Main {
                         System.out.println("1. Edit Item Quantity (set to 0 to remove)");
                         System.out.println("2. Clear Cart");
                         System.out.println("3. Back to Main Menu");
-                        System.out.print ("Choose an action: ");
+                        System.out.print("Choose an action: ");
                         int cartChoice;
                         try {
                             cartChoice = Integer.parseInt(scanner.nextLine());
@@ -814,8 +814,14 @@ public class Main {
                                                 order.setBankUsername(details.get("bankUsername"));
                                                 order.setBankDiscount(((OnlineBankingPayment.PaymentResult) result).getBankDiscount());
                                                 history.addOrder(order);
+                                                // 检查是否需要升级为会员并更新 customer 对象
                                                 if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
-                                                    System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
+                                                    System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can now enjoy a 10% member discount!");
+                                                    // 更新当前 customer 对象为 Member
+                                                    customer = (Customer) User.getUsers().get(customer.getUsername());
+                                                    // 重新初始化 cart 和 history 以使用更新后的 customer
+                                                    cart = new Cart(customer.getUsername());
+                                                    history = new OrderHistory(customer.getUsername());
                                                 }
                                                 System.out.println("\n" + result.getInvoice().toFormattedString());
                                                 cart.clearCart();
@@ -831,7 +837,6 @@ public class Main {
                                             System.out.println("Please try again.");
                                         }
                                     }
-
                                 } else if (paymentMethod.equalsIgnoreCase("Cash on Delivery")) {
                                     paymentProcessor = new CODPayment();
                                     boolean codPaymentCompleted = false;
@@ -851,8 +856,14 @@ public class Main {
                                             order.setDeliveryAddress(deliveryAddress);
                                             order.setContactInfo(contactInfo);
                                             history.addOrder(order);
+                                            // 检查是否需要升级为会员并更新 customer 对象
                                             if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
-                                                System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
+                                                System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can now enjoy a 10% member discount!");
+                                                // 更新当前 customer 对象为 Member
+                                                customer = (Customer) User.getUsers().get(customer.getUsername());
+                                                // 重新初始化 cart 和 history 以使用更新后的 customer
+                                                cart = new Cart(customer.getUsername());
+                                                history = new OrderHistory(customer.getUsername());
                                             }
                                             System.out.println("\n" + result.getInvoice().toFormattedString());
                                             cart.clearCart();
