@@ -15,6 +15,10 @@ public class Order implements Serializable {
     private final double TOTAL; // Only keep total, remove discountedTotal
     private final LocalDate ORDER_DATE;
     private String paymentStatus;
+    private String paymentMethod; // 新增：支付方式（"online_banking" 或 "cod_payment"）
+    private String bankName;     // 新增：银行名称（仅在线支付）
+    private String bankUsername; // 新增：银行用户名（仅在线支付）
+    private double bankDiscount;  // 新增：银行折扣（仅在线支付）
 
     public Order(Cart cart, Customer customer) {
         this.ORDER_ID = nextOrderId++;
@@ -27,10 +31,15 @@ public class Order implements Serializable {
         this.TOTAL = cart.getTotal();
         this.ORDER_DATE = LocalDate.now();
         this.paymentStatus = "Pending";
+        this.paymentMethod = null;
+        this.bankName = null;
+        this.bankUsername = null;
+        this.bankDiscount = 0.0;
     }
 
     // New constructor for loading from file
-    public Order(int orderId, String username, Cart cart, LocalDate orderDate, double total) {
+    public Order(int orderId, String username, Cart cart, LocalDate orderDate, double total,
+                 String paymentStatus, String paymentMethod, String bankName, String bankUsername, double bankDiscount) {
         this.ORDER_ID = orderId;
         this.USERNAME = username;
         // Deep copy items from cart
@@ -40,7 +49,11 @@ public class Order implements Serializable {
         }
         this.TOTAL = total;
         this.ORDER_DATE = orderDate;
-        this.paymentStatus = "Unknown";
+        this.paymentStatus = paymentStatus;
+        this.paymentMethod = paymentMethod;
+        this.bankName = bankName;
+        this.bankUsername = bankUsername;
+        this.bankDiscount = bankDiscount;
     }
 
     public int getOrderId() {
@@ -71,7 +84,43 @@ public class Order implements Serializable {
         return ORDER_DATE;
     }
 
-    // 修改后的 getCart 方法：直接构造 Cart，不触发库存更新
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    public String getBankName() {
+        return bankName;
+    }
+
+    public void setBankName(String bankName) {
+        this.bankName = bankName;
+    }
+
+    public String getBankUsername() {
+        return bankUsername;
+    }
+
+    public void setBankUsername(String bankUsername) {
+        this.bankUsername = bankUsername;
+    }
+
+    public double getBankDiscount() {
+        return bankDiscount;
+    }
+
+    public void setBankDiscount(double bankDiscount) {
+        this.bankDiscount = bankDiscount;
+    }
+
+    // Synchronize nextOrderId with OrderHistory
+    public static void setNextOrderId(int id) {
+        nextOrderId = Math.max(nextOrderId, id);
+    }
+
     public Cart getCart() {
         Cart cart = new Cart(USERNAME);
         cart.clearItems(); // 清空默认加载的 items
@@ -79,11 +128,6 @@ public class Order implements Serializable {
             cart.addItemDirectly(new CartItem(item.getProduct(), item.getQuantity()));
         }
         return cart;
-    }
-
-    // Synchronize nextOrderId with OrderHistory
-    public static void setNextOrderId(int id) {
-        nextOrderId = Math.max(nextOrderId, id);
     }
 
     @Override
@@ -113,6 +157,12 @@ public class Order implements Serializable {
         // 总计和底部分隔线
         sb.append("--------------------------------------------------------------\n");
         sb.append(String.format("%-63sRM%-13.2f\n", "Total:", TOTAL));
+        if (paymentMethod != null && paymentMethod.equals("online_banking")) {
+            sb.append(String.format("Payment Method: %s\n", paymentMethod));
+            sb.append(String.format("Bank: %s\n", bankName != null ? bankName : "Unknown"));
+            sb.append(String.format("Bank Username: %s\n", bankUsername != null ? bankUsername : "Unknown"));
+            sb.append(String.format("Bank Discount: %.1f%%\n", bankDiscount * 100));
+        }
         sb.append("==============================================================\n");
         return sb.toString();
     }

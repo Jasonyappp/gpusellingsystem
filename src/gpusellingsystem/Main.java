@@ -1,6 +1,6 @@
-
 package gpusellingsystem;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -320,21 +320,21 @@ public class Main {
                                 System.out.println("Product with ID " + updateId + " updated successfully.");
                                 break;
                             case 4: // Search Product
-                            System.out.print("Enter product ID to search: ");
-                            int searchId;
-                            try {
-                                searchId = Integer.parseInt(scanner.nextLine());
-                            } catch (NumberFormatException e) {
-                                System.out.println("Invalid product ID. Please enter a valid number.");
+                                System.out.print("Enter product ID to search: ");
+                                int searchId;
+                                try {
+                                    searchId = Integer.parseInt(scanner.nextLine());
+                                } catch (NumberFormatException e) {
+                                    System.out.println("Invalid product ID. Please enter a valid number.");
+                                    break;
+                                }
+                                Product product = inventory.searchProductById(searchId);
+                                if (product != null) {
+                                    System.out.println("Found: " + product);
+                                } else {
+                                    System.out.println("Product with ID " + searchId + " not found.");
+                                }
                                 break;
-                            }
-                            Product product = inventory.searchProductById(searchId);
-                            if (product != null) {
-                                System.out.println("Found: " + product);
-                            } else {
-                                System.out.println("Product with ID " + searchId + " not found.");
-                            }
-                            break;
                             case 5: // View Product Listing
                                 System.out.println("\nProduct Listing:");
                                 if (inventory.getProducts().isEmpty()) {
@@ -442,7 +442,7 @@ public class Main {
                                 inCustomerManagementMenu = false;
                                 break;
                             default:
-                                System.out.println("Invalid option! Please choose 1, 2, 3, 4, or 5.");
+                                System.out.println("Invalid option! Please choose reason, 1, 2, 3, 4, or 5.");
                         }
                     }
                     break;
@@ -789,6 +789,10 @@ public class Main {
                                     try {
                                         if (result.isSuccess()) {
                                             order.setPaymentStatus("Completed");
+                                            order.setPaymentMethod("online_banking");
+                                            order.setBankName(details.get("bankName"));
+                                            order.setBankUsername(details.get("bankUsername"));
+                                            order.setBankDiscount(((OnlineBankingPayment.PaymentResult) result).getBankDiscount());
                                             history.addOrder(order);
                                             if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
                                                 System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
@@ -828,6 +832,7 @@ public class Main {
 
                                         if (result.isSuccess()) {
                                             order.setPaymentStatus("Pending");
+                                            order.setPaymentMethod("cod_payment");
                                             history.addOrder(order);
                                             if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
                                                 System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
@@ -893,6 +898,40 @@ public class Main {
                                 try {
                                     String historyStr = history.toString();
                                     System.out.println(historyStr);
+                                    if (history.getOrderCount() > 0) {
+                                        System.out.print("Enter the order number to view details (1-" + history.getOrderCount() + ", or 0 to go back): ");
+                                        int orderIndex;
+                                        try {
+                                            orderIndex = Integer.parseInt(scanner.nextLine());
+                                        } catch (NumberFormatException e) {
+                                            System.out.println("Invalid input. Please enter a number.");
+                                            continue;
+                                        }
+                                        if (orderIndex == 0) {
+                                            break; // Go back to Profile menu
+                                        }
+                                        Order selectedOrder = history.getOrderByIndex(orderIndex);
+                                        if (selectedOrder == null) {
+                                            System.out.println("Invalid order number. Please choose a number between 1 and " + history.getOrderCount() + ".");
+                                            continue;
+                                        }
+                                        if (selectedOrder.getPaymentStatus().equals("Cancelled")) {
+                                            System.out.println("Order ID " + selectedOrder.getOrderId() + " has been cancelled.");
+                                        } else {
+                                            // Reconstruct invoice for Completed or Pending orders
+                                            Invoice invoice;
+                                            if (selectedOrder.getPaymentStatus().equals("Completed")) {
+                                                invoice = new Invoice(selectedOrder, customer, selectedOrder.getPaymentMethod(),
+                                                                     true, selectedOrder.getBankName(), selectedOrder.getBankUsername(),
+                                                                     null, null, null, selectedOrder.getBankDiscount());
+                                            } else {
+                                                // Assume COD for Pending
+                                                invoice = new Invoice(selectedOrder, customer, "cod_payment", false, null, null,
+                                                                     "Unknown", "Unknown", LocalDate.now().plusDays(3));
+                                            }
+                                            System.out.println("\n" + invoice.toFormattedString());
+                                        }
+                                    }
                                 } catch (RuntimeException e) {
                                     System.out.println("Error loading order history: " + e.getMessage());
                                 }

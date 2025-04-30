@@ -36,6 +36,17 @@ public class OrderHistory {
         return null;
     }
 
+    public Order getOrderByIndex(int index) {
+        if (index < 1 || index > orders.size()) {
+            return null;
+        }
+        return orders.get(index - 1);
+    }
+
+    public int getOrderCount() {
+        return orders.size();
+    }
+
     private void loadFromFile() {
         orders.clear();
         String filePath = "order_data/" + username + "_orders.txt";
@@ -47,8 +58,8 @@ public class OrderHistory {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
-                if (parts.length != 5) {
-                    continue; // Skip malformed lines
+                if (parts.length != 5 && parts.length != 9) { // 支持旧格式（5字段）和新格式（9字段）
+                    continue;
                 }
                 int orderId = Integer.parseInt(parts[0]);
                 String username = parts[1];
@@ -56,13 +67,23 @@ public class OrderHistory {
                 double total = Double.parseDouble(parts[3]);
                 String paymentStatus = parts[4];
 
-                // Create a dummy empty Cart
                 Cart cart = new Cart(username);
-                cart.clearItems(); // Ensure cart is empty
-                // Create the Order object
-                Order order = new Order(orderId, username, cart, orderDate, total);
-                order.setPaymentStatus(paymentStatus);
-                orders.add(order);
+                cart.clearItems();
+                
+                if (parts.length == 5) {
+                    // 旧格式：没有支付细节
+                    Order order = new Order(orderId, username, cart, orderDate, total, paymentStatus, null, null, null, 0.0);
+                    orders.add(order);
+                } else {
+                    // 新格式：包含支付细节
+                    String paymentMethod = parts[5].isEmpty() ? null : parts[5];
+                    String bankName = parts[6].isEmpty() ? null : parts[6];
+                    String bankUsername = parts[7].isEmpty() ? null : parts[7];
+                    double bankDiscount = Double.parseDouble(parts[8]);
+                    Order order = new Order(orderId, username, cart, orderDate, total, paymentStatus, 
+                                           paymentMethod, bankName, bankUsername, bankDiscount);
+                    orders.add(order);
+                }
                 Order.setNextOrderId(orderId + 1);
             }
         } catch (IOException | NumberFormatException e) {
@@ -72,7 +93,6 @@ public class OrderHistory {
 
     private void saveToFile() {
         try {
-            // Create order_data folder if it doesn't exist
             File dir = new File("order_data");
             if (!dir.exists()) {
                 if (!dir.mkdirs()) {
@@ -81,16 +101,19 @@ public class OrderHistory {
                 }
             }
 
-            // Create file path: order_data/(username)_orders.txt
             String filePath = "order_data/" + username + "_orders.txt";
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
                 for (Order order : orders) {
-                    writer.write(String.format("%d,%s,%s,%.2f,%s",
+                    writer.write(String.format("%d,%s,%s,%.2f,%s,%s,%s,%s,%.2f",
                         order.getOrderId(),
                         order.getUsername(),
                         order.getOrderDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
                         order.getTotal(),
-                        order.getPaymentStatus() != null ? order.getPaymentStatus() : "Unknown"));
+                        order.getPaymentStatus() != null ? order.getPaymentStatus() : "Unknown",
+                        order.getPaymentMethod() != null ? order.getPaymentMethod() : "",
+                        order.getBankName() != null ? order.getBankName() : "",
+                        order.getBankUsername() != null ? order.getBankUsername() : "",
+                        order.getBankDiscount()));
                     writer.newLine();
                 }
             }
