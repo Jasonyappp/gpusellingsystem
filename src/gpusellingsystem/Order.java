@@ -8,24 +8,23 @@ import java.util.ArrayList;
 
 public class Order implements Serializable {
     private static final long serialVersionUID = 1L;
-    private static int nextOrderId = 1000; // Start Order IDs at 1000 to avoid overlap with Product IDs
+    private static int nextOrderId = 1000;
     private final int ORDER_ID;
-    private final String USERNAME;
+    private final int USER_ID;
     private final List<CartItem> ITEMS;
-    private final double TOTAL; // Only keep total, remove discountedTotal
+    private final double TOTAL;
     private final LocalDate ORDER_DATE;
     private String paymentStatus;
-    private String paymentMethod; // 支付方式（"online_banking" 或 "pod_payment"）
-    private String bankName;     // 银行名称（仅在线支付）
-    private String bankUsername; // 银行用户名（仅在线支付）
-    private double bankDiscount;  // 银行折扣（仅在线支付）
-    private String deliveryAddress; // 配送地址（仅COD）
-    private String contactInfo;    // 联系信息（仅COD）
+    private String paymentMethod;
+    private String bankName;
+    private String bankUsername;
+    private double bankDiscount;
+    private String deliveryAddress;
+    private String contactInfo;
 
     public Order(Cart cart, Customer customer) {
         this.ORDER_ID = nextOrderId++;
-        this.USERNAME = customer.getUsername();
-        // Deep copy items to prevent modifications after order creation
+        this.USER_ID = customer.getUserId();
         this.ITEMS = new ArrayList<>();
         for (CartItem item : cart.getItems()) {
             this.ITEMS.add(new CartItem(item.getProduct(), item.getQuantity()));
@@ -41,13 +40,11 @@ public class Order implements Serializable {
         this.contactInfo = null;
     }
 
-    // New constructor for loading from file
-    public Order(int orderId, String username, Cart cart, LocalDate orderDate, double total,
+    public Order(int orderId, int userId, Cart cart, LocalDate orderDate, double total,
                  String paymentStatus, String paymentMethod, String bankName, String bankUsername, 
                  double bankDiscount, String deliveryAddress, String contactInfo) {
         this.ORDER_ID = orderId;
-        this.USERNAME = username;
-        // Deep copy items from cart
+        this.USER_ID = userId;
         this.ITEMS = new ArrayList<>();
         for (CartItem item : cart.getItems()) {
             this.ITEMS.add(new CartItem(item.getProduct(), item.getQuantity()));
@@ -67,12 +64,12 @@ public class Order implements Serializable {
         return ORDER_ID;
     }
 
-    public String getUsername() {
-        return USERNAME;
+    public int getUserId() {
+        return USER_ID;
     }
 
     public List<CartItem> getItems() {
-        return new ArrayList<>(ITEMS); // Return defensive copy
+        return new ArrayList<>(ITEMS);
     }
 
     public double getTotal() {
@@ -139,14 +136,13 @@ public class Order implements Serializable {
         this.contactInfo = contactInfo;
     }
 
-    // Synchronize nextOrderId with OrderHistory
     public static void setNextOrderId(int id) {
         nextOrderId = Math.max(nextOrderId, id);
     }
 
     public Cart getCart() {
-        Cart cart = new Cart(USERNAME);
-        cart.clearItems(); // 清空默认加载的 items
+        Cart cart = new Cart(USER_ID);
+        cart.clearItems();
         for (CartItem item : ITEMS) {
             cart.addItemDirectly(new CartItem(item.getProduct(), item.getQuantity()));
         }
@@ -156,28 +152,23 @@ public class Order implements Serializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        // 标题和分隔线
         sb.append("==============================================================\n");
         sb.append("                      Order Confirmation                      \n");
         sb.append("==============================================================\n");
-        // 订单基本信息
         sb.append(String.format("Order ID: %-10d\n", ORDER_ID));
-        sb.append(String.format("Username: %-20s\n", USERNAME));
+        sb.append(String.format("User ID: %-20d\n", USER_ID));
         sb.append(String.format("Order Date: %-15s\n", ORDER_DATE.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
         sb.append("--------------------------------------------------------------\n");
-        // 物品列表表头
         sb.append("Items:\n");
         sb.append(String.format("%-8s%-30s%-15s%-10s%-15s\n", 
                 "ID", "Name", "Unit Price", "Quantity", "Subtotal"));
         sb.append("--------+------------------------------+---------------+----------+---------------\n");
-        // 物品详情
         for (CartItem item : ITEMS) {
             Product p = item.getProduct();
             double subtotal = p.getPrice() * item.getQuantity();
             sb.append(String.format("%-8d%-30sRM%-13.2f%-10dRM%-13.2f\n", 
                     p.getProductId(), p.getName(), p.getPrice(), item.getQuantity(), subtotal));
         }
-        // 总计和底部分隔线
         sb.append("--------------------------------------------------------------\n");
         sb.append(String.format("%-63sRM%-13.2f\n", "Total:", TOTAL));
         if (paymentMethod != null) {

@@ -17,7 +17,7 @@ public class OnlineBankingPayment extends PaymentMethod {
 
     @Override
     public PaymentResult processPayment(Order order, Customer customer, double paymentAmount, Map<String, String> details) {
-        double expectedAmount = order.getTotal(); // Use raw total since discount is handled in Invoice
+        double expectedAmount = order.getTotal(); // Use raw total since discount is handled in Receipt
         if (Math.abs(paymentAmount - expectedAmount) > 0.01) {
             return new PaymentResult(false, String.format("Payment amount (RM %.2f) does not match order total (RM %.2f)!", 
                 paymentAmount, expectedAmount), null, 0.0);
@@ -51,7 +51,7 @@ public class OnlineBankingPayment extends PaymentMethod {
                 bankDiscount = 0.0; // Fallback, should not occur due to validation
         }
 
-        Invoice invoice = new Invoice(order, customer, "online_banking", true, bankName, bankUsername, null, null, null, bankDiscount);
+        Receipt invoice = new Receipt(order, customer, "online_banking", true, bankName, bankUsername, null, null, null, bankDiscount);
         return new PaymentResult(true, "Online banking payment successful!", invoice, bankDiscount);
     }
 
@@ -59,7 +59,7 @@ public class OnlineBankingPayment extends PaymentMethod {
     public static class PaymentResult extends PaymentMethod.PaymentResult {
         private final double bankDiscount;
 
-        public PaymentResult(boolean success, String message, Invoice invoice, double bankDiscount) {
+        public PaymentResult(boolean success, String message, Receipt invoice, double bankDiscount) {
             super(success, message, invoice);
             this.bankDiscount = bankDiscount;
         }

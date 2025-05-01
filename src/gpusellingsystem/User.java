@@ -59,7 +59,7 @@ public abstract class User {
                             user = new NonMember(userId, username, password);
                         }
                     }
-                    users.put(username, user);
+                    users.put(username.toLowerCase(), user);
                     if (userId >= nextUserId) {
                         nextUserId = userId + 1;
                     }
@@ -112,7 +112,7 @@ public abstract class User {
     }
 
     public String getUsername() {
- upcoming:        return username;
+        return username;
     }
 
     public String getPassword() {
@@ -149,7 +149,7 @@ public abstract class User {
     }
 
     public static boolean authenticateAdmin(String adminUsername, String adminPassword) {
-        User admin = users.get(adminUsername);
+        User admin = users.get(adminUsername.toLowerCase());
         if (admin == null || !admin.isAdmin()) {
             return false;
         }

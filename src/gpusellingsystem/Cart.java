@@ -13,12 +13,12 @@ import java.io.Serializable;
 public class Cart implements Serializable {
     private static final long serialVersionUID = 1L;
     private List<CartItem> items;
-    private String username;
+    private final int userId;
 
-    public Cart(String username) {
-        this.username = username;
+    public Cart(int userId) {
+        this.userId = userId;
         items = new ArrayList<>();
-        loadFromFile(); // Load once during construction
+        loadFromFile();
     }
 
     public boolean addItem(Product product, int quantity, ProductManager inventory) {
@@ -30,30 +30,26 @@ public class Cart implements Serializable {
             }
         }
         if (currentQuantity + quantity > product.getQuantity()) {
-            return false; // Stock limit exceeded
+            return false;
         }
         for (CartItem item : items) {
             if (item.getProduct().getProductId() == product.getProductId()) {
                 item.setQuantity(item.getQuantity() + quantity);
-                // Update stock: reduce by the quantity added
                 inventory.updateProduct(product.getProductId(), null, -1, product.getQuantity() - quantity, null);
                 saveToFile();
                 return true;
             }
         }
         items.add(new CartItem(product, quantity));
-        // Update stock: reduce by the quantity added
         inventory.updateProduct(product.getProductId(), null, -1, product.getQuantity() - quantity, null);
         saveToFile();
         return true;
     }
 
-    // 新增方法：直接添加 CartItem，不更新库存
     public void addItemDirectly(CartItem item) {
         items.add(item);
     }
 
-    // 新增方法：清空 items 列表
     public void clearItems() {
         items.clear();
     }
@@ -63,7 +59,6 @@ public class Cart implements Serializable {
         if (product == null) {
             return false;
         }
-        // Find the current quantity in the cart
         CartItem targetItem = null;
         int currentQuantity = 0;
         for (CartItem item : items) {
@@ -76,19 +71,16 @@ public class Cart implements Serializable {
         if (targetItem == null) {
             return false;
         }
-        // Check if the new quantity exceeds available stock
-        int stockAdjustment = currentQuantity - newQuantity; // Positive if reducing quantity, negative if increasing
+        int stockAdjustment = currentQuantity - newQuantity;
         int newStock = product.getQuantity() + stockAdjustment;
         if (newStock < 0) {
-            return false; // Not enough stock to increase quantity
+            return false;
         }
-        // Update the cart
         if (newQuantity <= 0) {
             items.remove(targetItem);
         } else {
             targetItem.setQuantity(newQuantity);
         }
-        // Update the stock in inventory
         inventory.updateProduct(productId, null, -1, newStock, null);
         saveToFile();
         return true;
@@ -103,14 +95,13 @@ public class Cart implements Serializable {
     }
 
     public List<CartItem> getItems() {
-        return new ArrayList<>(items); // Return a copy to prevent external modification
+        return new ArrayList<>(items);
     }
 
     public void clearCart() {
         items.clear();
-        // Delete the cart file
         try {
-            String filePath = "cart_data/" + username + "_cart.txt";
+            String filePath = "cart_data/user_" + userId + "_cart.txt";
             File file = new File(filePath);
             if (file.exists()) {
                 if (!file.delete()) {
@@ -123,24 +114,23 @@ public class Cart implements Serializable {
     }
 
     private void loadFromFile() {
-        items.clear(); // Clear current items to avoid duplicates
-        String filePath = "cart_data/" + username + "_cart.txt";
+        items.clear();
+        String filePath = "cart_data/user_" + userId + "_cart.txt";
         File file = new File(filePath);
         if (!file.exists()) {
-            return; // File doesn't exist, nothing to load
+            return;
         }
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
                 if (parts.length != 5) {
-                    continue; // Skip malformed lines
+                    continue;
                 }
                 int productId = Integer.parseInt(parts[0]);
                 String name = parts[1];
                 double price = Double.parseDouble(parts[2]);
                 int quantity = Integer.parseInt(parts[3]);
-                // Use GPU as a concrete class instead of anonymous subclass
                 Product product = new GPU(productId, name, price, 0, "Loaded from cart");
                 items.add(new CartItem(product, quantity));
             }
@@ -151,7 +141,6 @@ public class Cart implements Serializable {
 
     private void saveToFile() {
         try {
-            // Create cart_data folder if it doesn't exist
             File dir = new File("cart_data");
             if (!dir.exists()) {
                 if (!dir.mkdirs()) {
@@ -159,9 +148,7 @@ public class Cart implements Serializable {
                     return;
                 }
             }
-            
-            // Create file path: cart_data/(username)_cart.txt
-            String filePath = "cart_data/" + username + "_cart.txt";
+            String filePath = "cart_data/user_" + userId + "_cart.txt";
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
                 for (CartItem item : items) {
                     Product p = item.getProduct();
@@ -176,25 +163,24 @@ public class Cart implements Serializable {
     }
 
     @Override
-public String toString() {
-    StringBuilder sb = new StringBuilder();
-    if (items.isEmpty()) {
-        return "Your cart is empty!";
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        if (items.isEmpty()) {
+            return "Your cart is empty!";
+        }
+        sb.append("=== Your Cart ===\n");
+        sb.append(String.format("%-8s%-30s%-15s%-10s%-15s\n", 
+            "ID", "Product Name", "Unit Price", "Quantity", "Subtotal"));
+        sb.append(String.format("%-8s%-30s%-15s%-10s%-15s\n", 
+            "--------", "------------------------------", "---------------", "----------", "---------------"));
+        for (CartItem item : items) {
+            Product p = item.getProduct();
+            double subtotal = p.getPrice() * item.getQuantity();
+            sb.append(String.format("%-8d%-30sRM%-13.2f%-10dRM%-13.2f\n", 
+                p.getProductId(), p.getName(), p.getPrice(), item.getQuantity(), subtotal));
+        }
+        sb.append("-------------------------------------------------------------\n");
+        sb.append(String.format("%-63sRM%-13.2f\n", "Total:", getTotal()));
+        return sb.toString();
     }
-    // Add header
-    sb.append("=== Your Cart ===\n");
-    sb.append(String.format("%-8s%-30s%-15s%-10s%-15s\n", 
-        "ID", "Product Name", "Unit Price", "Quantity", "Subtotal"));
-    sb.append(String.format("%-8s%-30s%-15s%-10s%-15s\n", 
-        "--------", "------------------------------", "---------------", "----------", "---------------"));
-    for (CartItem item : items) {
-        Product p = item.getProduct();
-        double subtotal = p.getPrice() * item.getQuantity();
-        sb.append(String.format("%-8d%-30sRM%-13.2f%-10dRM%-13.2f\n", 
-            p.getProductId(), p.getName(), p.getPrice(), item.getQuantity(), subtotal));
-    }
-    sb.append("-------------------------------------------------------------\n");
-    sb.append(String.format("%-63sRM%-13.2f\n", "Total:", getTotal()));
-    return sb.toString();
-}
 }

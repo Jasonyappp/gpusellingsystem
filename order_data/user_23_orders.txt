@@ -1,0 +1,2 @@
+1001,23,2025-05-01,6000.00,Completed,online_banking,Maybank,123234,0.03,,|8,AMD Radeon RX 6700 XT,2000.00,3,GPU;
+1002,23,2025-05-01,1800.00,Completed,online_banking,Maybank,1234,0.03,,|7,NVIDIA GeForce RTX 3060,1800.00,1,GPU;

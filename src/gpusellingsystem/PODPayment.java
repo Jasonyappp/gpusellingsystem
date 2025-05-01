@@ -30,7 +30,7 @@ public class PODPayment extends PaymentMethod {
     }
 
         LocalDate deliveryDate = LocalDate.now().plusDays(3);
-        Invoice invoice = new Invoice(order, customer, "pod_payment", false, null, null, deliveryAddress, contactInfo, deliveryDate);
-        return new PaymentResult(true, "Cash on delivery order confirmed!", invoice);
+        Receipt invoice = new Receipt(order, customer, "pod_payment", false, null, null, deliveryAddress, contactInfo, deliveryDate);
+        return new PaymentResult(true, "Pay on delivery order confirmed!", invoice);
     }
 }

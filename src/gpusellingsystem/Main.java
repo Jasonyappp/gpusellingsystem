@@ -70,7 +70,7 @@ public class Main {
     private static User handleLogin() {
         System.out.print("Enter username: ");
         String username = scanner.nextLine().trim();
-        User user = User.getUsers().get(username);
+        User user = User.getUsers().get(username.toLowerCase());
         if (user == null) {
             System.out.println("Login failed. Invalid username.");
             return null;
@@ -143,7 +143,7 @@ public class Main {
             System.out.println("Username cannot be empty. Registration cancelled.");
             return;
         }
-        if (User.getUsers().containsKey(username)) {
+        if (User.getUsers().containsKey(username.toLowerCase())) {
             System.out.println("Username already exists. Please choose a different username.");
             return;
         }
@@ -161,7 +161,7 @@ public class Main {
         
         User user = new NonMember(User.getNextUserId(), username, password);
         User.incrementNextUserId();
-        User.getUsers().put(username, user);
+        User.getUsers().put(username.toLowerCase(), user);
         User.saveUsersToFile();
         System.out.println("Account created successfully for " + username + " with ID " + (User.getNextUserId() - 1));
     }
@@ -409,12 +409,10 @@ public class Main {
                                 System.out.println("Current username: " + customerToUpdate.getUsername() + ", enter new username (or press Enter to keep): ");
                                 String newUsername = scanner.nextLine();
                                 
-                                // Determine current membership status
                                 boolean wasMember = customerToUpdate instanceof Member;
                                 boolean isMember = wasMember;
                                 boolean membershipChanged = false;
 
-                                // Loop to validate membership input
                                 while (true) {
                                     System.out.println("Current type: " + (wasMember ? "Member" : "NonMember") + ", make member? (y/n): ");
                                     String memberChoice = scanner.nextLine().trim().toLowerCase();
@@ -431,7 +429,6 @@ public class Main {
                                     }
                                 }
 
-                                // Check if username or membership status has changed
                                 boolean usernameChanged = !newUsername.isEmpty() && !newUsername.equals(customerToUpdate.getUsername());
                                 if (usernameChanged || membershipChanged) {
                                     userManager.updateCustomer(updateUsername, newUsername, "", isMember);
@@ -471,8 +468,8 @@ public class Main {
     }
 
     private static void handleCustomerMenu(Customer customer, ProductManager inventory) {
-        Cart cart = new Cart(customer.getUsername());
-        OrderHistory history = new OrderHistory(customer.getUsername());
+        Cart cart = new Cart(customer.getUserId());
+        OrderHistory history = new OrderHistory(customer.getUserId());
 
         System.out.println("\n=== Welcome to GPU/CPU Shop ===");
         boolean inCustomerMenu = true;
@@ -715,7 +712,7 @@ public class Main {
                             while (!paymentCompleted) {
                                 System.out.println("\n=== Payment Method ===");
                                 System.out.println("1. Online Banking");
-                                System.out.println("2. Cash on Delivery");
+                                System.out.println("2. Pay on Delivery");
                                 System.out.println("3. Back to Payment Options");
                                 System.out.print("Choose a payment method (1-3): ");
                                 int paymentChoice;
@@ -734,7 +731,7 @@ public class Main {
                                 if (paymentChoice == 1) {
                                     paymentMethod = "Online Banking";
                                 } else if (paymentChoice == 2) {
-                                    paymentMethod = "Cash on Delivery";
+                                    paymentMethod = "Pay on Delivery";
                                 } else {
                                     System.out.println("Invalid choice. Please select 1, 2, or 3.");
                                     continue;
@@ -758,129 +755,122 @@ public class Main {
                                 Map<String, String> details = new HashMap<>();
                                 PaymentMethod.PaymentResult result = null;
 
-                                if (paymentMethod.equalsIgnoreCase("Online Banking")) {
-                                    paymentProcessor = new OnlineBankingPayment();
-                                    boolean validBankDetails = false;
-                                    while (!validBankDetails) {
-                                        System.out.println("\n=== Select Bank ===");
-                                        System.out.println("1. Maybank");
-                                        System.out.println("2. CIMB");
-                                        System.out.println("3. Public Bank");
-                                        System.out.println("4. Back to Payment Options");
-                                        System.out.print("Choose a bank (1-4): ");
-                                        String input = scanner.nextLine().trim();
-                                        if (input.isEmpty()) {
-                                            System.out.println("Input cannot be empty. Please select an option (1-4).");
-                                            continue;
-                                        }
-                                        int bankChoice;
-                                        try {
-                                            bankChoice = Integer.parseInt(input);
-                                        } catch (NumberFormatException e) {
-                                            System.out.println("Invalid input. Please enter a number (1-4).");
-                                            continue;
-                                        }
-
-                                        if (bankChoice == 4) {
-                                            continue paymentOptions;
-                                        }
-
-                                        String bankName;
-                                        if (bankChoice == 1) {
-                                            bankName = "Maybank";
-                                        } else if (bankChoice == 2) {
-                                            bankName = "CIMB";
-                                        } else if (bankChoice == 3) {
-                                            bankName = "Public Bank";
-                                        } else {
-                                            System.out.println("Invalid choice. Please select 1, 2, 3 or 4.");
-                                            continue;
-                                        }
-
-                                        System.out.print("Enter bank username: ");
-                                        String bankUsername = scanner.nextLine().trim();
-                                        if (bankUsername.isEmpty()) {
-                                            System.out.println("Bank username cannot be empty! Returning to bank selection.");
-                                            continue;
-                                        }
-
-                                        System.out.print("Enter bank password: ");
-                                        String bankPassword = scanner.nextLine().trim();
-                                        if (bankPassword.isEmpty()) {
-                                            System.out.println("Bank password cannot be empty! Returning to bank selection.");
-                                            continue;
-                                        }
-
-                                        details.put("bankName", bankName);
-                                        details.put("bankUsername", bankUsername);
-                                        details.put("bankPassword", bankPassword);
-                                        result = paymentProcessor.processPayment(order, customer, paymentAmount, details);
-
-                                        try {
-                                            if (result.isSuccess()) {
-                                                order.setPaymentStatus("Completed");
-                                                order.setPaymentMethod("online_banking");
-                                                order.setBankName(details.get("bankName"));
-                                                order.setBankUsername(details.get("bankUsername"));
-                                                order.setBankDiscount(((OnlineBankingPayment.PaymentResult) result).getBankDiscount());
-                                                history.addOrder(order);
-                                                if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
-                                                    System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
-                                                    User updatedUser = User.getUsers().get(customer.getUsername());
-                                                    if (updatedUser instanceof Customer) {
-                                                        customer = (Customer) updatedUser;
-                                                    }
-                                                }
-                                                System.out.println("\n" + result.getInvoice().toFormattedString());
-                                                cart.clearCart();
-                                                paymentCompleted = true;
-                                                validBankDetails = true;
-                                                break paymentOptions;
-                                            } else {
-                                                System.out.println("Payment failed: " + result.getMessage());
-                                                System.out.println("Please try again.");
-                                            }
-                                        } catch (RuntimeException e) {
-                                            System.out.println("Error processing payment or saving order: " + e.getMessage());
-                                            System.out.println("Please try again.");
-                                        }
-                                    }
-                                } else if (paymentMethod.equalsIgnoreCase("Cash on Delivery")) {
-                                    paymentProcessor = new PODPayment();
-                                    boolean podPaymentCompleted = false;
-                                    while (!podPaymentCompleted) {
-                                        System.out.println("\n=== Cash on Delivery ===");
-                                        System.out.print("Enter delivery address: ");
-                                        String deliveryAddress = scanner.nextLine().trim();
-                                        System.out.print("Enter contact information (10 to 15 digit phone number): ");
-                                        String contactInfo = scanner.nextLine().trim();
-                                        details.put("deliveryAddress", deliveryAddress);
-                                        details.put("contactInfo", contactInfo);
-                                        result = paymentProcessor.processPayment(order, customer, paymentAmount, details);
-
-                                        if (result.isSuccess()) {
-                                            order.setPaymentStatus("Pending");
-                                            order.setPaymentMethod("pod_payment");
-                                            order.setDeliveryAddress(deliveryAddress);
-                                            order.setContactInfo(contactInfo);
-                                            history.addOrder(order);
-                                            if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
-                                                System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
-                                                User updatedUser = User.getUsers().get(customer.getUsername());
-                                                if (updatedUser instanceof Customer) {
-                                                    customer = (Customer) updatedUser;
-                                                }
-                                            }
-                                            System.out.println("\n" + result.getInvoice().toFormattedString());
-                                            cart.clearCart();
-                                            podPaymentCompleted = true;
-                                            paymentCompleted = true;
-                                            break paymentOptions;
-                                        } else {
-                                            System.out.println("Payment failed: " + result.getMessage());
-                                        }
-                                    }
+                               if (paymentMethod.equalsIgnoreCase("Online Banking")) {
+                            paymentProcessor = new OnlineBankingPayment();
+                            boolean validBankDetails = false;
+                            while (!validBankDetails) {
+                                System.out.println("\n=== Select Bank ===");
+                                System.out.println("1. Maybank");
+                                System.out.println("2. CIMB");
+                                System.out.println("3. Public Bank");
+                                System.out.println("4. Back to Payment Options");
+                                System.out.print("Choose a bank (1-4): ");
+                                String input = scanner.nextLine().trim();
+                                if (input.isEmpty()) {
+                                    System.out.println("Input cannot be empty. Please select an option (1-4).");
+                                    continue;
                                 }
+                                int bankChoice;
+                                try {
+                                    bankChoice = Integer.parseInt(input);
+                                } catch (NumberFormatException e) {
+                                    System.out.println("Invalid input. Please enter a number (1-4).");
+                                    continue;
+                                }
+
+                                if (bankChoice == 4) {
+                                    continue paymentOptions;
+                                }
+
+                                String bankName;
+                                if (bankChoice == 1) {
+                                    bankName = "Maybank";
+                                } else if (bankChoice == 2) {
+                                    bankName = "CIMB";
+                                } else if (bankChoice == 3) {
+                                    bankName = "Public Bank";
+                                } else {
+                                    System.out.println("Invalid choice. Please select 1, 2, 3 or 4.");
+                                    continue;
+                                }
+
+                                System.out.print("Enter bank username: ");
+                                String bankUsername = scanner.nextLine().trim();
+                                if (bankUsername.isEmpty()) {
+                                    System.out.println("Bank username cannot be empty! Returning to bank selection.");
+                                    continue;
+                                }
+
+                                System.out.print("Enter bank password: ");
+                                String bankPassword = scanner.nextLine().trim();
+                                if (bankPassword.isEmpty()) {
+                                    System.out.println("Bank password cannot be empty! Returning to bank selection.");
+                                    continue;
+                                }
+
+                                details.put("bankName", bankName);
+                                details.put("bankUsername", bankUsername);
+                                details.put("bankPassword", bankPassword);
+                                result = paymentProcessor.processPayment(order, customer, paymentAmount, details);
+
+                                try {
+                                    if (result.isSuccess()) {
+                                        order.setPaymentStatus("Completed");
+                                        order.setPaymentMethod("online_banking");
+                                        order.setBankName(details.get("bankName"));
+                                        order.setBankUsername(details.get("bankUsername"));
+                                        order.setBankDiscount(((OnlineBankingPayment.PaymentResult) result).getBankDiscount());
+                                        history.addOrder(order);
+                                        if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
+                                            System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
+                                            User updatedUser = User.getUsers().get(customer.getUsername().toLowerCase());
+                                            if (updatedUser instanceof Customer) {
+                                                customer = (Customer) updatedUser;
+                                            }
+                                        }
+                                        System.out.println("\n" + result.getInvoice().toFormattedString());
+                                        cart.clearCart();
+                                        paymentCompleted = true;
+                                        validBankDetails = true;
+                                        break paymentOptions;
+                                    } else {
+                                        System.out.println("Payment failed: " + result.getMessage());
+                                        System.out.println("Please try again.");
+                                    }
+                                } catch (RuntimeException e) {
+                                    System.out.println("Error processing payment or saving order: " + e.getMessage());
+                                    System.out.println("Please try again.");
+                                }
+                            }
+                        } else if (paymentMethod.equalsIgnoreCase("Pay on Delivery")) {
+                            paymentProcessor = new PODPayment();
+                            boolean podPaymentCompleted = false;
+                            while (!podPaymentCompleted) {
+                                System.out.println("\n=== Pay on Delivery ===");
+                                System.out.print("Enter delivery address: ");
+                                String deliveryAddress = scanner.nextLine().trim();
+                                System.out.print("Enter contact information (10 to 15 digit phone number): ");
+                                String contactInfo = scanner.nextLine().trim();
+                                details.put("deliveryAddress", deliveryAddress);
+                                details.put("contactInfo", contactInfo);
+                                result = paymentProcessor.processPayment(order, customer, paymentAmount, details);
+
+                                if (result.isSuccess()) {
+                                    order.setPaymentStatus("Pending");
+                                    order.setPaymentMethod("pod_payment");
+                                    order.setDeliveryAddress(deliveryAddress);
+                                    order.setContactInfo(contactInfo);
+                                    history.addOrder(order);
+                                    System.out.println("\n" + result.getInvoice().toFormattedString());
+                                    cart.clearCart();
+                                    podPaymentCompleted = true;
+                                    paymentCompleted = true;
+                                    break paymentOptions;
+                                } else {
+                                    System.out.println("Payment failed: " + result.getMessage());
+                                }
+                            }
+                        }
                             }
                         } else if (orderChoice == 2) {
                             order.setPaymentStatus("Cancelled");
@@ -955,17 +945,17 @@ public class Main {
                                         if (selectedOrder.getPaymentStatus().equals("Cancelled")) {
                                             System.out.println("Order ID " + selectedOrder.getOrderId() + " has been cancelled.");
                                         } else {
-                                            Invoice invoice;
+                                            Receipt receipt;
                                             if (selectedOrder.getPaymentStatus().equals("Completed")) {
-                                                invoice = new Invoice(selectedOrder, customer, selectedOrder.getPaymentMethod(),
+                                                receipt = new Receipt(selectedOrder, customer, selectedOrder.getPaymentMethod(),
                                                                      true, selectedOrder.getBankName(), selectedOrder.getBankUsername(),
                                                                      null, null, null, selectedOrder.getBankDiscount());
                                             } else {
-                                                invoice = new Invoice(selectedOrder, customer, "pod_payment", false, null, null,
+                                                receipt = new Receipt(selectedOrder, customer, "pod_payment", false, null, null,
                                                                      selectedOrder.getDeliveryAddress(), selectedOrder.getContactInfo(),
                                                                      LocalDate.now().plusDays(3));
                                             }
-                                            System.out.println("\n" + invoice.toFormattedString());
+                                            System.out.println("\n" + receipt.toFormattedString());
                                         }
                                     }
                                 } catch (RuntimeException e) {

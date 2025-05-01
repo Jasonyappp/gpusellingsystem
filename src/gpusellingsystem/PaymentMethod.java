@@ -13,9 +13,9 @@ public abstract class PaymentMethod {
     public static class PaymentResult {
         private final boolean SUCCESS;
         private final String MESSAGE;
-        private final Invoice INVOICE;
+        private final Receipt INVOICE;
 
-        public PaymentResult(boolean success, String message, Invoice invoice) {
+        public PaymentResult(boolean success, String message, Receipt invoice) {
             this.SUCCESS = success;
             this.MESSAGE = message;
             this.INVOICE = invoice;
@@ -29,7 +29,7 @@ public abstract class PaymentMethod {
             return MESSAGE;
         }
 
-        public Invoice getInvoice() {
+        public Receipt getInvoice() {
             return INVOICE;
         }
     }

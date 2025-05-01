@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter;
  *
  * @author chong
  */
-public class Invoice {
+public class Receipt {
     private final Order ORDER;
     private final Customer CUSTOMER; // Add Customer to calculate discount
     private final String PAYMENTMETHOD;
@@ -21,12 +21,12 @@ public class Invoice {
     private final LocalDate DELIVERYDATE;
     private final double BANKDISCOUNT;
 
-    public Invoice(Order order, Customer customer, String paymentMethod, boolean paid, String bankName, String bankUsername,
+    public Receipt(Order order, Customer customer, String paymentMethod, boolean paid, String bankName, String bankUsername,
                    String deliveryAddress, String contactInfo, LocalDate deliveryDate) {
         this(order, customer, paymentMethod, paid, bankName, bankUsername, deliveryAddress, contactInfo, deliveryDate, 0.0);
     }
 
-    public Invoice(Order order, Customer customer, String paymentMethod, boolean paid, String bankName, String bankUsername,
+    public Receipt(Order order, Customer customer, String paymentMethod, boolean paid, String bankName, String bankUsername,
                    String deliveryAddress, String contactInfo, LocalDate deliveryDate, double bankDiscount) {
         this.ORDER = order;
         this.CUSTOMER = customer;
@@ -70,7 +70,7 @@ public class Invoice {
         sb.append(String.format("%-34s: RM %-10.2f\n", "Total (Before Discount)", total));
         double customerDiscount = CUSTOMER.getDiscount();
         if (customerDiscount < 0 || customerDiscount > 1) {
-            customerDiscount = 0; // Fallback to no discount if invalid
+            customerDiscount = 0; // Fallback to no discount if ingetalid
         }
         double totalAfterCustomerDiscount = total * (1 - customerDiscount);
         sb.append(String.format("%-34s: %-10.1f%%\n", "Member Discount", customerDiscount * 100));
@@ -86,7 +86,7 @@ public class Invoice {
         if (PAYMENTMETHOD.equals("online_banking")) {
             sb.append("Bank Information:\n");
                     sb.append(String.format("  %-34s: %-10s\n", "Payment Method", 
-                PAYMENTMETHOD.equals("online_banking") ? "Online Banking" : "Cash on Delivery"));
+                PAYMENTMETHOD.equals("online_banking") ? "Online Banking" : "Pay on Delivery"));
             sb.append(String.format("  %-34s: %-10s\n", "Bank", BANKNAME));
 
         } else {
@@ -94,7 +94,7 @@ public class Invoice {
             sb.append(String.format("  %-12s: %s\n", "Address", DELIVERYADDRESS));
             sb.append(String.format("  %-12s: %s\n", "Contact", CONTACTINFO));
             sb.append(String.format("  %-12s: %s\n", "Estimated Delivery Date", DELIVERYDATE.format(formatter)));
-            sb.append(String.format("  %-12s: %s\n", "Note", "Please prepare cash for payment on delivery."));
+            sb.append(String.format("  %-12s: %s\n", "Note", "Please prepare card or QR for payment on delivery."));
         }
         sb.append("==============================================================\n");
         return sb.toString();

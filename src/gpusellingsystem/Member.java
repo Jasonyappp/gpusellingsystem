@@ -21,4 +21,3 @@ public class Member extends Customer {
     
     
 }
-//test
