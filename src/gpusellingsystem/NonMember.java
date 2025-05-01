@@ -4,10 +4,6 @@
  */
 package gpusellingsystem;
 
-/**
- *
- * @author chong
- */
 public class NonMember extends Customer {
     public NonMember(int userId, String username, String password) {
         super(userId, username, password);

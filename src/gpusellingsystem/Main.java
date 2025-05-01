@@ -93,16 +93,14 @@ public class Main {
         if (user.isLockedOut()) {
             long remainingSeconds = user.getRemainingLockoutSeconds();
             System.out.println("Account is locked. " + remainingSeconds + " seconds remaining.");
-            System.out.print("Do you want to reset password? (y/n): ");
+            System.out.println("Please visit our physical store to reset your password with admin verification.");
+            System.out.print("Do you want to proceed with admin-verified password reset? (y/n): ");
             String resetChoice = scanner.nextLine().toLowerCase().trim();
             if (resetChoice.equals("y")) {
-                System.out.print("Enter new password: ");
-                String newPassword = scanner.nextLine().trim();
-                try {
-                    user.resetPassword(newPassword);
+                if (handleAdminVerifiedPasswordReset(user)) {
                     System.out.println("Password reset successfully. Please log in again.");
-                } catch (IllegalArgumentException e) {
-                    System.out.println("Error: " + e.getMessage());
+                } else {
+                    System.out.println("Password reset failed. Please try again or contact support.");
                 }
                 return null;
             }
@@ -117,22 +115,52 @@ public class Main {
             if (user.getFailedLoginAttempts() >= 3) {
                 long remainingSeconds = user.getRemainingLockoutSeconds();
                 System.out.println("Account is locked. " + remainingSeconds + " seconds remaining.");
-                System.out.print("Do you want to reset password? (y/n): ");
+                System.out.println("Please visit our physical store to reset your password with admin verification.");
+                System.out.print("Do you want to proceed with admin-verified password reset? (y/n): ");
                 String resetChoice = scanner.nextLine().toLowerCase().trim();
                 if (resetChoice.equals("y")) {
-                    System.out.print("Enter new password: ");
-                    String newPassword = scanner.nextLine().trim();
-                    try {
-                        user.resetPassword(newPassword);
+                    if (handleAdminVerifiedPasswordReset(user)) {
                         System.out.println("Password reset successfully. Please log in again.");
-                    } catch (IllegalArgumentException e) {
-                        System.out.println("Error: " + e.getMessage());
+                    } else {
+                        System.out.println("Password reset failed. Please try again or contact support.");
                     }
                     return null;
                 }
                 return null;
             }
             return null;
+        }
+    }
+
+    private static boolean handleAdminVerifiedPasswordReset(User user) {
+        System.out.println("\n=== Admin Verification for Password Reset ===");
+        System.out.print("Enter admin username: ");
+        String adminUsername = scanner.nextLine().trim();
+        System.out.print("Enter admin password: ");
+        String adminPassword = scanner.nextLine().trim();
+
+        if (User.authenticateAdmin(adminUsername, adminPassword)) {
+            System.out.print("Enter new password for user " + user.getUsername() + ": ");
+            String newPassword = scanner.nextLine().trim();
+            if (newPassword.isEmpty()) {
+                System.out.println("Password cannot be empty.");
+                return false;
+            }
+            if (newPassword.length() < 5 || newPassword.length() > 12) {
+                System.out.println("Password must be between 5 and 12 characters.");
+                return false;
+            }
+            try {
+                user.resetPassword(newPassword);
+                System.out.println("Admin verification successful. Password reset completed.");
+                return true;
+            } catch (IllegalArgumentException e) {
+                System.out.println("Error: " + e.getMessage());
+                return false;
+            }
+        } else {
+            System.out.println("Admin verification failed. Invalid admin username or password.");
+            return false;
         }
     }
 
@@ -755,122 +783,122 @@ public class Main {
                                 Map<String, String> details = new HashMap<>();
                                 PaymentMethod.PaymentResult result = null;
 
-                               if (paymentMethod.equalsIgnoreCase("Online Banking")) {
-                            paymentProcessor = new OnlineBankingPayment();
-                            boolean validBankDetails = false;
-                            while (!validBankDetails) {
-                                System.out.println("\n=== Select Bank ===");
-                                System.out.println("1. Maybank");
-                                System.out.println("2. CIMB");
-                                System.out.println("3. Public Bank");
-                                System.out.println("4. Back to Payment Options");
-                                System.out.print("Choose a bank (1-4): ");
-                                String input = scanner.nextLine().trim();
-                                if (input.isEmpty()) {
-                                    System.out.println("Input cannot be empty. Please select an option (1-4).");
-                                    continue;
-                                }
-                                int bankChoice;
-                                try {
-                                    bankChoice = Integer.parseInt(input);
-                                } catch (NumberFormatException e) {
-                                    System.out.println("Invalid input. Please enter a number (1-4).");
-                                    continue;
-                                }
-
-                                if (bankChoice == 4) {
-                                    continue paymentOptions;
-                                }
-
-                                String bankName;
-                                if (bankChoice == 1) {
-                                    bankName = "Maybank";
-                                } else if (bankChoice == 2) {
-                                    bankName = "CIMB";
-                                } else if (bankChoice == 3) {
-                                    bankName = "Public Bank";
-                                } else {
-                                    System.out.println("Invalid choice. Please select 1, 2, 3 or 4.");
-                                    continue;
-                                }
-
-                                System.out.print("Enter bank username: ");
-                                String bankUsername = scanner.nextLine().trim();
-                                if (bankUsername.isEmpty()) {
-                                    System.out.println("Bank username cannot be empty! Returning to bank selection.");
-                                    continue;
-                                }
-
-                                System.out.print("Enter bank password: ");
-                                String bankPassword = scanner.nextLine().trim();
-                                if (bankPassword.isEmpty()) {
-                                    System.out.println("Bank password cannot be empty! Returning to bank selection.");
-                                    continue;
-                                }
-
-                                details.put("bankName", bankName);
-                                details.put("bankUsername", bankUsername);
-                                details.put("bankPassword", bankPassword);
-                                result = paymentProcessor.processPayment(order, customer, paymentAmount, details);
-
-                                try {
-                                    if (result.isSuccess()) {
-                                        order.setPaymentStatus("Completed");
-                                        order.setPaymentMethod("online_banking");
-                                        order.setBankName(details.get("bankName"));
-                                        order.setBankUsername(details.get("bankUsername"));
-                                        order.setBankDiscount(((OnlineBankingPayment.PaymentResult) result).getBankDiscount());
-                                        history.addOrder(order);
-                                        if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
-                                            System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
-                                            User updatedUser = User.getUsers().get(customer.getUsername().toLowerCase());
-                                            if (updatedUser instanceof Customer) {
-                                                customer = (Customer) updatedUser;
-                                            }
+                                if (paymentMethod.equalsIgnoreCase("Online Banking")) {
+                                    paymentProcessor = new OnlineBankingPayment();
+                                    boolean validBankDetails = false;
+                                    while (!validBankDetails) {
+                                        System.out.println("\n=== Select Bank ===");
+                                        System.out.println("1. Maybank");
+                                        System.out.println("2. CIMB");
+                                        System.out.println("3. Public Bank");
+                                        System.out.println("4. Back to Payment Options");
+                                        System.out.print("Choose a bank (1-4): ");
+                                        String input = scanner.nextLine().trim();
+                                        if (input.isEmpty()) {
+                                            System.out.println("Input cannot be empty. Please select an option (1-4).");
+                                            continue;
                                         }
-                                        System.out.println("\n" + result.getInvoice().toFormattedString());
-                                        cart.clearCart();
-                                        paymentCompleted = true;
-                                        validBankDetails = true;
-                                        break paymentOptions;
-                                    } else {
-                                        System.out.println("Payment failed: " + result.getMessage());
-                                        System.out.println("Please try again.");
-                                    }
-                                } catch (RuntimeException e) {
-                                    System.out.println("Error processing payment or saving order: " + e.getMessage());
-                                    System.out.println("Please try again.");
-                                }
-                            }
-                        } else if (paymentMethod.equalsIgnoreCase("Pay on Delivery")) {
-                            paymentProcessor = new PODPayment();
-                            boolean podPaymentCompleted = false;
-                            while (!podPaymentCompleted) {
-                                System.out.println("\n=== Pay on Delivery ===");
-                                System.out.print("Enter delivery address: ");
-                                String deliveryAddress = scanner.nextLine().trim();
-                                System.out.print("Enter contact information (10 to 15 digit phone number): ");
-                                String contactInfo = scanner.nextLine().trim();
-                                details.put("deliveryAddress", deliveryAddress);
-                                details.put("contactInfo", contactInfo);
-                                result = paymentProcessor.processPayment(order, customer, paymentAmount, details);
+                                        int bankChoice;
+                                        try {
+                                            bankChoice = Integer.parseInt(input);
+                                        } catch (NumberFormatException e) {
+                                            System.out.println("Invalid input. Please enter a number (1-4).");
+                                            continue;
+                                        }
 
-                                if (result.isSuccess()) {
-                                    order.setPaymentStatus("Pending");
-                                    order.setPaymentMethod("pod_payment");
-                                    order.setDeliveryAddress(deliveryAddress);
-                                    order.setContactInfo(contactInfo);
-                                    history.addOrder(order);
-                                    System.out.println("\n" + result.getInvoice().toFormattedString());
-                                    cart.clearCart();
-                                    podPaymentCompleted = true;
-                                    paymentCompleted = true;
-                                    break paymentOptions;
-                                } else {
-                                    System.out.println("Payment failed: " + result.getMessage());
+                                        if (bankChoice == 4) {
+                                            continue paymentOptions;
+                                        }
+
+                                        String bankName;
+                                        if (bankChoice == 1) {
+                                            bankName = "Maybank";
+                                        } else if (bankChoice == 2) {
+                                            bankName = "CIMB";
+                                        } else if (bankChoice == 3) {
+                                            bankName = "Public Bank";
+                                        } else {
+                                            System.out.println("Invalid choice. Please select 1, 2, 3 or 4.");
+                                            continue;
+                                        }
+
+                                        System.out.print("Enter bank username: ");
+                                        String bankUsername = scanner.nextLine().trim();
+                                        if (bankUsername.isEmpty()) {
+                                            System.out.println("Bank username cannot be empty! Returning to bank selection.");
+                                            continue;
+                                        }
+
+                                        System.out.print("Enter bank password: ");
+                                        String bankPassword = scanner.nextLine().trim();
+                                        if (bankPassword.isEmpty()) {
+                                            System.out.println("Bank password cannot be empty! Returning to bank selection.");
+                                            continue;
+                                        }
+
+                                        details.put("bankName", bankName);
+                                        details.put("bankUsername", bankUsername);
+                                        details.put("bankPassword", bankPassword);
+                                        result = paymentProcessor.processPayment(order, customer, paymentAmount, details);
+
+                                        try {
+                                            if (result.isSuccess()) {
+                                                order.setPaymentStatus("Completed");
+                                                order.setPaymentMethod("online_banking");
+                                                order.setBankName(details.get("bankName"));
+                                                order.setBankUsername(details.get("bankUsername"));
+                                                order.setBankDiscount(((OnlineBankingPayment.PaymentResult) result).getBankDiscount());
+                                                history.addOrder(order);
+                                                if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
+                                                    System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
+                                                    User updatedUser = User.getUsers().get(customer.getUsername().toLowerCase());
+                                                    if (updatedUser instanceof Customer) {
+                                                        customer = (Customer) updatedUser;
+                                                    }
+                                                }
+                                                System.out.println("\n" + result.getInvoice().toFormattedString());
+                                                cart.clearCart();
+                                                paymentCompleted = true;
+                                                validBankDetails = true;
+                                                break paymentOptions;
+                                            } else {
+                                                System.out.println("Payment failed: " + result.getMessage());
+                                                System.out.println("Please try again.");
+                                            }
+                                        } catch (RuntimeException e) {
+                                            System.out.println("Error processing payment or saving order: " + e.getMessage());
+                                            System.out.println("Please try again.");
+                                        }
+                                    }
+                                } else if (paymentMethod.equalsIgnoreCase("Pay on Delivery")) {
+                                    paymentProcessor = new PODPayment();
+                                    boolean podPaymentCompleted = false;
+                                    while (!podPaymentCompleted) {
+                                        System.out.println("\n=== Pay on Delivery ===");
+                                        System.out.print("Enter delivery address: ");
+                                        String deliveryAddress = scanner.nextLine().trim();
+                                        System.out.print("Enter contact information (10 to 15 digit phone number): ");
+                                        String contactInfo = scanner.nextLine().trim();
+                                        details.put("deliveryAddress", deliveryAddress);
+                                        details.put("contactInfo", contactInfo);
+                                        result = paymentProcessor.processPayment(order, customer, paymentAmount, details);
+
+                                        if (result.isSuccess()) {
+                                            order.setPaymentStatus("Pending");
+                                            order.setPaymentMethod("pod_payment");
+                                            order.setDeliveryAddress(deliveryAddress);
+                                            order.setContactInfo(contactInfo);
+                                            history.addOrder(order);
+                                            System.out.println("\n" + result.getInvoice().toFormattedString());
+                                            cart.clearCart();
+                                            podPaymentCompleted = true;
+                                            paymentCompleted = true;
+                                            break paymentOptions;
+                                        } else {
+                                            System.out.println("Payment failed: " + result.getMessage());
+                                        }
+                                    }
                                 }
-                            }
-                        }
                             }
                         } else if (orderChoice == 2) {
                             order.setPaymentStatus("Cancelled");
