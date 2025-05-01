@@ -14,8 +14,8 @@ public abstract class User {
     private String username;
     private String password;
     private boolean isLoggedIn;
-    private int failedLoginAttempts; // 密码错误次数（不持久化）
-    private long lockoutTimestamp; // 锁定时间戳（不持久化）
+    private int failedLoginAttempts;
+    private long lockoutTimestamp;
     private static Map<String, User> users = new HashMap<>();
     private static int nextUserId = 1;
     private static final String USERS_FILE_PATH = "user_data/users.txt";
@@ -29,7 +29,6 @@ public abstract class User {
         this.lockoutTimestamp = 0;
     }
 
-    // Static method to load users from file（保持原样）
     public static void loadUsersFromFile() {
         users.clear();
         File file = new File(USERS_FILE_PATH);
@@ -73,7 +72,6 @@ public abstract class User {
         }
     }
 
-    // Static method to save users to file（保持原样）
     public static void saveUsersToFile() {
         try {
             File dir = new File("user_data");
@@ -97,17 +95,14 @@ public abstract class User {
         }
     }
 
-    // Getter for the users map
     public static Map<String, User> getUsers() {
         return users;
     }
 
-    // Getter for nextUserId
     public static int getNextUserId() {
         return nextUserId;
     }
 
-    // Method to increment nextUserId
     public static void incrementNextUserId() {
         nextUserId++;
     }
@@ -117,7 +112,7 @@ public abstract class User {
     }
 
     public String getUsername() {
-        return username;
+ upcoming:        return username;
     }
 
     public String getPassword() {
@@ -132,21 +127,19 @@ public abstract class User {
         return failedLoginAttempts;
     }
 
-    // 检查是否被锁定
     public boolean isLockedOut() {
         if (lockoutTimestamp == 0) {
             return false;
         }
         long currentTime = System.currentTimeMillis();
         if (currentTime >= lockoutTimestamp + 60_000) {
-            lockoutTimestamp = 0; // 自动解锁
+            lockoutTimestamp = 0;
             failedLoginAttempts = 0;
             return false;
         }
         return true;
     }
 
-    // 获取剩余锁定时间（秒）
     public long getRemainingLockoutSeconds() {
         if (!isLockedOut()) {
             return 0;
@@ -155,7 +148,6 @@ public abstract class User {
         return (lockoutTimestamp + 60_000 - currentTime) / 1000;
     }
 
-    // 管理员认证
     public static boolean authenticateAdmin(String adminUsername, String adminPassword) {
         User admin = users.get(adminUsername);
         if (admin == null || !admin.isAdmin()) {
@@ -164,31 +156,35 @@ public abstract class User {
         return admin.getPassword().equals(adminPassword);
     }
 
-    // 登录方法，包含错误计数和锁定逻辑
     public boolean login(String inputPassword) {
         if (isLockedOut()) {
-            return false; // 锁定状态由Main.handleLogin处理
+            return false;
         }
 
         if (this.password.equals(inputPassword)) {
             this.isLoggedIn = true;
-            this.failedLoginAttempts = 0; // 登录成功，重置错误计数
+            this.failedLoginAttempts = 0;
             return true;
         } else {
             this.failedLoginAttempts++;
             if (this.failedLoginAttempts >= 3) {
-                this.lockoutTimestamp = System.currentTimeMillis(); // 设置锁定时间
+                this.lockoutTimestamp = System.currentTimeMillis();
             }
             return false;
         }
     }
 
-    // 重置密码
     public void resetPassword(String newPassword) {
+        if (newPassword.isEmpty()) {
+            throw new IllegalArgumentException("Password cannot be empty.");
+        }
+        if (newPassword.equals(this.password)) {
+            throw new IllegalArgumentException("New password cannot be the same as the old password.");
+        }
         this.password = newPassword;
         this.failedLoginAttempts = 0;
         this.lockoutTimestamp = 0;
-        saveUsersToFile(); // 更新文件中的密码
+        saveUsersToFile();
     }
 
     public void logout() {

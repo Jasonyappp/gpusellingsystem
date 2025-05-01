@@ -70,7 +70,7 @@ public class Main {
 
     private static User handleLogin() {
         System.out.print("Enter username: ");
-        String username = scanner.nextLine();
+        String username = scanner.nextLine().trim();
         User user = User.getUsers().get(username);
         if (user == null) {
             System.out.println("Login failed. Invalid username.");
@@ -79,7 +79,7 @@ public class Main {
 
         if (!(user instanceof Customer)) {
             System.out.print("Enter password: ");
-            String password = scanner.nextLine();
+            String password = scanner.nextLine().trim();
             if (user.login(password)) {
                 System.out.println("Logged in as " + username + ".");
                 return user;
@@ -90,31 +90,22 @@ public class Main {
         }
 
         System.out.print("Enter password: ");
-        String password = scanner.nextLine();
+        String password = scanner.nextLine().trim();
         if (user.isLockedOut()) {
             long remainingSeconds = user.getRemainingLockoutSeconds();
             System.out.println("Account is locked. " + remainingSeconds + " seconds remaining.");
             System.out.print("Do you want to reset password? (y/n): ");
-            String resetChoice = scanner.nextLine().toLowerCase();
+            String resetChoice = scanner.nextLine().toLowerCase().trim();
             if (resetChoice.equals("y")) {
                 System.out.print("Enter new password: ");
-                String newPassword = scanner.nextLine();
-                if (newPassword.isEmpty()) {
-                    System.out.println("Password cannot be empty. Reset cancelled.");
-                    return null;
-                }
-                System.out.print("Enter admin username: ");
-                String adminUsername = scanner.nextLine();
-                System.out.print("Enter admin password: ");
-                String adminPassword = scanner.nextLine();
-                if (User.authenticateAdmin(adminUsername, adminPassword)) {
+                String newPassword = scanner.nextLine().trim();
+                try {
                     user.resetPassword(newPassword);
                     System.out.println("Password reset successfully. Please log in again.");
-                    return null;
-                } else {
-                    System.out.println("Admin authentication failed. Password reset cancelled.");
-                    return null;
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Error: " + e.getMessage());
                 }
+                return null;
             }
             return null;
         }
@@ -128,26 +119,17 @@ public class Main {
                 long remainingSeconds = user.getRemainingLockoutSeconds();
                 System.out.println("Account is locked. " + remainingSeconds + " seconds remaining.");
                 System.out.print("Do you want to reset password? (y/n): ");
-                String resetChoice = scanner.nextLine().toLowerCase();
+                String resetChoice = scanner.nextLine().toLowerCase().trim();
                 if (resetChoice.equals("y")) {
                     System.out.print("Enter new password: ");
-                    String newPassword = scanner.nextLine();
-                    if (newPassword.isEmpty()) {
-                        System.out.println("Password cannot be empty. Reset cancelled.");
-                        return null;
-                    }
-                    System.out.print("Enter admin username: ");
-                    String adminUsername = scanner.nextLine();
-                    System.out.print("Enter admin password: ");
-                    String adminPassword = scanner.nextLine();
-                    if (User.authenticateAdmin(adminUsername, adminPassword)) {
+                    String newPassword = scanner.nextLine().trim();
+                    try {
                         user.resetPassword(newPassword);
                         System.out.println("Password reset successfully. Please log in again.");
-                        return null;
-                    } else {
-                        System.out.println("Admin authentication failed. Password reset cancelled.");
-                        return null;
+                    } catch (IllegalArgumentException e) {
+                        System.out.println("Error: " + e.getMessage());
                     }
+                    return null;
                 }
                 return null;
             }
@@ -157,7 +139,7 @@ public class Main {
 
     private static void handleCreateAccount() {
         System.out.print("Enter new username: ");
-        String username = scanner.nextLine();
+        String username = scanner.nextLine().trim();
         if (username.isEmpty()) {
             System.out.println("Username cannot be empty. Registration cancelled.");
             return;
@@ -168,7 +150,7 @@ public class Main {
         }
 
         System.out.print("Enter new password: ");
-        String password = scanner.nextLine();
+        String password = scanner.nextLine().trim();
         if (password.isEmpty()) {
             System.out.println("Password cannot be empty. Registration cancelled.");
             return;
@@ -177,7 +159,7 @@ public class Main {
             System.out.println("Password must be between 5 and 12 characters. Registration cancelled.");
             return;
         }
-
+        
         User user = new NonMember(User.getNextUserId(), username, password);
         User.incrementNextUserId();
         User.getUsers().put(username, user);
@@ -203,7 +185,7 @@ public class Main {
             }
 
             switch (choice) {
-                case 1: // Manage Product
+                case 1 -> {
                     boolean inProductManagementMenu = true;
                     while (inProductManagementMenu) {
                         System.out.println("\n=== Manage Product ===");
@@ -224,36 +206,48 @@ public class Main {
                         }
 
                         switch (productChoice) {
-                            case 1: // Add Product
+                            case 1:
                                 System.out.print("Enter product type (GPU/CPU): ");
-                                String type = scanner.nextLine();
+                                String type = scanner.nextLine().toUpperCase().trim();
+                                if (!type.equals("GPU") && !type.equals("CPU")) {
+                                    System.out.println("Invalid product type. Please enter GPU or CPU.");
+                                    break;
+                                }
                                 System.out.print("Enter product name: ");
-                                String name = scanner.nextLine();
+                                String name = scanner.nextLine().trim();
                                 System.out.print("Enter product price: ");
                                 double price;
                                 try {
                                     price = Double.parseDouble(scanner.nextLine());
+                                    if (price < 0) {
+                                        System.out.println("Invalid price. Negative values are not allowed.");
+                                        break;
+                                    }
                                 } catch (NumberFormatException e) {
                                     System.out.println("Invalid price. Please enter a valid number.");
-                                    continue;
+                                    break;
                                 }
                                 System.out.print("Enter product quantity: ");
                                 int quantity;
                                 try {
                                     quantity = Integer.parseInt(scanner.nextLine());
+                                    if (quantity < 0) {
+                                        System.out.println("Invalid quantity. Negative values are not allowed.");
+                                        break;
+                                    }
                                 } catch (NumberFormatException e) {
                                     System.out.println("Invalid quantity. Please enter a valid number.");
-                                    continue;
+                                    break;
                                 }
                                 System.out.print("Enter product detail: ");
                                 String detail = scanner.nextLine();
                                 if (inventory.addProduct(name, price, quantity, detail, type)) {
                                     System.out.println("Product added successfully.");
                                 } else {
-                                    System.out.println("Failed to add product. Check input values or type (must be GPU or CPU).");
+                                    System.out.println("Invalid product name. This product has already exist.");
                                 }
                                 break;
-                            case 2: // Remove Product
+                            case 2:
                                 System.out.print("Enter product ID to remove: ");
                                 int removeId;
                                 try {
@@ -268,7 +262,7 @@ public class Main {
                                     System.out.println("Product with ID " + removeId + " not found.");
                                 }
                                 break;
-                            case 3: // Update Product
+                            case 3:
                                 System.out.print("Enter product ID to update: ");
                                 int updateId;
                                 try {
@@ -319,7 +313,7 @@ public class Main {
                                 inventory.updateProduct(updateId, newName, newPrice, newQuantity, newDetail);
                                 System.out.println("Product with ID " + updateId + " updated successfully.");
                                 break;
-                            case 4: // Search Product
+                            case 4:
                                 System.out.print("Enter product ID to search: ");
                                 int searchId;
                                 try {
@@ -335,31 +329,31 @@ public class Main {
                                     System.out.println("Product with ID " + searchId + " not found.");
                                 }
                                 break;
-                            case 5: // View Product Listing
+                            case 5:
                                 System.out.println("\nProduct Listing:");
                                 if (inventory.getProducts().isEmpty()) {
                                     System.out.println("No products available.");
                                 } else {
-                                    System.out.printf("%-8s%-30s%-15s%-12s%-50s%-10s%n", 
-                                        "ID", "Name", "Price", "Quantity", "Detail", "Type");
-                                    System.out.printf("%-8s%-30s%-15s%-12s%-50s%-10s%n", 
-                                        "--------", "------------------------------", "---------------", "------------", "--------------------------------------------------", "----------");
+                                    System.out.printf("%-8s%-30s%-15s%-12s%-50s%-10s%n",
+                                            "ID", "Name", "Price", "Quantity", "Detail", "Type");
+                                    System.out.printf("%-8s%-30s%-15s%-12s%-50s%-10s%n",
+                                            "--------", "------------------------------", "---------------", "------------", "--------------------------------------------------", "----------");
                                     for (Product p : inventory.getProducts().values()) {
-                                        System.out.printf("%-8d%-30sRM%-13.2f%-12d%-50s%-10s%n", 
-                                        p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(), 
-                                            p.getClass().getSimpleName());
+                                        System.out.printf("%-8d%-30sRM%-13.2f%-12d%-50s%-10s%n",
+                                                p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(),
+                                                p.getClass().getSimpleName());
                                     }
                                 }
                                 break;
-                            case 6: // Back to Admin Page
+                            case 6:
                                 inProductManagementMenu = false;
                                 break;
                             default:
                                 System.out.println("Invalid choice. Please enter 1, 2, 3, 4, 5, or 6.");
                         }
                     }
-                    break;
-                case 2: // Manage Customers
+                }
+                case 2 -> {
                     boolean inCustomerManagementMenu = true;
                     while (inCustomerManagementMenu) {
                         System.out.println("\n=== Manage Customers ===");
@@ -379,24 +373,24 @@ public class Main {
                         }
 
                         switch (customerManagementChoice) {
-                            case 1: // View All Customers
+                            case 1:
                                 List<Customer> customers = userManager.getAllCustomers();
                                 if (customers.isEmpty()) {
                                     System.out.println("No customers found.");
                                 } else {
-                                    System.out.printf("%-8s%-25s%-25s%-15s%-12s%n", 
-                                        "ID", "Username", "Password", "Type", "Discount");
-                                    System.out.printf("%-8s%-25s%-25s%-15s%-12s%n", 
-                                        "--------", "-------------------------", "-------------------------", "---------------", "------------");
+                                    System.out.printf("%-8s%-25s%-15s%-12s%n",
+                                            "ID", "Username", "Type", "Discount");
+                                    System.out.printf("%-8s%-25s%-15s%-12s%n",
+                                            "--------", "-------------------------", "---------------", "------------");
                                     for (Customer customer : customers) {
                                         String customerType = customer instanceof Member ? "Member" : "NonMember";
-                                        System.out.printf("%-8d%-25s%-25s%-15s%.1f%%%n", 
-                                            customer.getUserId(), customer.getUsername(), customer.getPassword(), 
-                                            customerType, customer.getDiscount() * 100);
+                                        System.out.printf("%-8d%-25s%-15s%.1f%%%n",
+                                                customer.getUserId(), customer.getUsername(),
+                                                customerType, customer.getDiscount() * 100);
                                     }
                                 }
                                 break;
-                            case 2: // Delete Customer
+                            case 2:
                                 System.out.print("Enter customer username to delete: ");
                                 String deleteUsername = scanner.nextLine();
                                 if (userManager.deleteCustomer(deleteUsername)) {
@@ -405,7 +399,7 @@ public class Main {
                                     System.out.println("Customer '" + deleteUsername + "' not found or is an admin.");
                                 }
                                 break;
-                            case 3: // Update Customer
+                            case 3:
                                 System.out.print("Enter customer username to update: ");
                                 String updateUsername = scanner.nextLine();
                                 Customer customerToUpdate = userManager.searchCustomer(updateUsername);
@@ -415,45 +409,64 @@ public class Main {
                                 }
                                 System.out.println("Current username: " + customerToUpdate.getUsername() + ", enter new username (or press Enter to keep): ");
                                 String newUsername = scanner.nextLine();
-                                System.out.println("Current password: " + customerToUpdate.getPassword() + ", enter new password (or press Enter to keep): ");
-                                String newPassword = scanner.nextLine();
-                                if (!newPassword.isEmpty() && (newPassword.length() < 5 || newPassword.length() > 12)) {
-                                    System.out.println("Password must be between 5 and 12 characters. Update cancelled.");
-                                    break;
+                                
+                                // Determine current membership status
+                                boolean wasMember = customerToUpdate instanceof Member;
+                                boolean isMember = wasMember;
+                                boolean membershipChanged = false;
+
+                                // Loop to validate membership input
+                                while (true) {
+                                    System.out.println("Current type: " + (wasMember ? "Member" : "NonMember") + ", make member? (y/n): ");
+                                    String memberChoice = scanner.nextLine().trim().toLowerCase();
+                                    if (memberChoice.equals("y")) {
+                                        isMember = true;
+                                        membershipChanged = (isMember != wasMember);
+                                        break;
+                                    } else if (memberChoice.equals("n")) {
+                                        isMember = false;
+                                        membershipChanged = (isMember != wasMember);
+                                        break;
+                                    } else {
+                                        System.out.println("Invalid input. Please enter 'y' or 'n'.");
+                                    }
                                 }
-                                System.out.println("Current type: " + (customerToUpdate instanceof Member ? "Member" : "NonMember") + ", make member? (y/n): ");
-                                String memberChoice = scanner.nextLine().toLowerCase();
-                                boolean isMember = memberChoice.equals("y");
-                                userManager.updateCustomer(updateUsername, newUsername, newPassword, isMember);
-                                System.out.println("Customer updated successfully.");
+
+                                // Check if username or membership status has changed
+                                boolean usernameChanged = !newUsername.isEmpty() && !newUsername.equals(customerToUpdate.getUsername());
+                                if (usernameChanged || membershipChanged) {
+                                    userManager.updateCustomer(updateUsername, newUsername, "", isMember);
+                                    System.out.println("Customer updated successfully.");
+                                } else {
+                                    System.out.println("No changes made to customer profile.");
+                                }
                                 break;
-                            case 4: // Search Customer
+                            case 4:
                                 System.out.print("Enter customer username to search: ");
                                 String searchUsername = scanner.nextLine();
                                 Customer foundCustomer = userManager.searchCustomer(searchUsername);
                                 if (foundCustomer != null) {
                                     String customerType = foundCustomer instanceof Member ? "Member" : "NonMember";
-                                    System.out.printf("Found: ID: %d, Username: %s, Password: %s, Type: %s, Discount: %.1f%%\n", 
-                                        foundCustomer.getUserId(), foundCustomer.getUsername(), foundCustomer.getPassword(), 
-                                        customerType, foundCustomer.getDiscount() * 100);
+                                    System.out.printf("Found: ID: %d, Username: %s, Type: %s, Discount: %.1f%%\n",
+                                            foundCustomer.getUserId(), foundCustomer.getUsername(),
+                                            customerType, foundCustomer.getDiscount() * 100);
                                 } else {
                                     System.out.println("Customer '" + searchUsername + "' not found.");
                                 }
                                 break;
-                            case 5: // Back to Admin Page
+                            case 5:
                                 inCustomerManagementMenu = false;
                                 break;
                             default:
                                 System.out.println("Invalid option! Please choose 1, 2, 3, 4, or 5.");
                         }
                     }
-                    break;
-                case 3: // Logout
+                }
+                case 3 -> {
                     admin.logout();
                     inAdminMenu = false;
-                    break;
-                default:
-                    System.out.println("Invalid choice. Please enter 1, 2, or 3.");
+                }
+                default -> System.out.println("Invalid choice. Please enter 1, 2, or 3.");
             }
         }
     }
@@ -674,12 +687,12 @@ public class Main {
                         System.out.print("Confirm order? (y/n): ");
                         String confirmInput = scanner.nextLine().trim().toLowerCase();
                         if (confirmInput.equals("y")) {
-                            break; // Proceed to Payment Options
+                            break;
                         } else if (confirmInput.equals("n")) {
                             order.setPaymentStatus("Cancelled");
                             history.addOrder(order);
                             System.out.println("Order cancelled. Returning to menu.");
-                            continue mainMenu; // Return to Main Menu
+                            continue mainMenu;
                         } else {
                             System.out.println("Invalid input. Please enter 'y' or 'n'.");
                         }
@@ -715,7 +728,7 @@ public class Main {
                                 }
 
                                 if (paymentChoice == 3) {
-                                    continue paymentOptions; // 返回到 Payment Options 菜单
+                                    continue paymentOptions;
                                 }
 
                                 String paymentMethod;
@@ -734,9 +747,9 @@ public class Main {
                                     System.out.print("Proceed with payment? (y/n): ");
                                     String paymentConfirmInput = scanner.nextLine().trim().toLowerCase();
                                     if (paymentConfirmInput.equals("y")) {
-                                        break; // 继续处理支付
+                                        break;
                                     } else if (paymentConfirmInput.equals("n")) {
-                                        continue paymentOptions; // 返回到 Payment Options 菜单
+                                        continue paymentOptions;
                                     } else {
                                         System.out.println("Invalid input. Please enter 'y' or 'n'.");
                                     }
@@ -770,7 +783,7 @@ public class Main {
                                         }
 
                                         if (bankChoice == 4) {
-                                            continue paymentOptions; // 直接返回支付选项菜单
+                                            continue paymentOptions;
                                         }
 
                                         String bankName;
@@ -781,24 +794,22 @@ public class Main {
                                         } else if (bankChoice == 3) {
                                             bankName = "Public Bank";
                                         } else {
-                                            System.out.println("Invalid choice. Please select 1, 2, 3, or 4.");
+                                            System.out.println("Invalid choice. Please select 1, 2, 3 or 4.");
                                             continue;
                                         }
 
-                                        // 获取银行用户名，空输入返回 Select Bank
                                         System.out.print("Enter bank username: ");
                                         String bankUsername = scanner.nextLine().trim();
                                         if (bankUsername.isEmpty()) {
                                             System.out.println("Bank username cannot be empty! Returning to bank selection.");
-                                            continue; // 返回 Select Bank 菜单
+                                            continue;
                                         }
 
-                                        // 获取银行密码，空输入返回 Select Bank
                                         System.out.print("Enter bank password: ");
                                         String bankPassword = scanner.nextLine().trim();
                                         if (bankPassword.isEmpty()) {
                                             System.out.println("Bank password cannot be empty! Returning to bank selection.");
-                                            continue; // 返回 Select Bank 菜单
+                                            continue;
                                         }
 
                                         details.put("bankName", bankName);
@@ -816,7 +827,6 @@ public class Main {
                                                 history.addOrder(order);
                                                 if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
                                                     System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
-                                                    // Update customer object to reflect new Member status
                                                     User updatedUser = User.getUsers().get(customer.getUsername());
                                                     if (updatedUser instanceof Customer) {
                                                         customer = (Customer) updatedUser;
@@ -825,8 +835,8 @@ public class Main {
                                                 System.out.println("\n" + result.getInvoice().toFormattedString());
                                                 cart.clearCart();
                                                 paymentCompleted = true;
-                                                validBankDetails = true; // 成功支付，退出银行详情循环
-                                                break paymentOptions; // 跳出 paymentOptions 循环
+                                                validBankDetails = true;
+                                                break paymentOptions;
                                             } else {
                                                 System.out.println("Payment failed: " + result.getMessage());
                                                 System.out.println("Please try again.");
@@ -857,7 +867,6 @@ public class Main {
                                             history.addOrder(order);
                                             if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
                                                 System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
-                                                // Update customer object to reflect new Member status
                                                 User updatedUser = User.getUsers().get(customer.getUsername());
                                                 if (updatedUser instanceof Customer) {
                                                     customer = (Customer) updatedUser;
@@ -867,10 +876,9 @@ public class Main {
                                             cart.clearCart();
                                             codPaymentCompleted = true;
                                             paymentCompleted = true;
-                                            break paymentOptions; // 跳出 paymentOptions 循环
+                                            break paymentOptions;
                                         } else {
                                             System.out.println("Payment failed: " + result.getMessage());
-                                            // 继续循环，重新提示输入
                                         }
                                     }
                                 }
@@ -905,7 +913,7 @@ public class Main {
                         }
 
                         switch (profileChoice) {
-                            case 1: // Change Password
+                            case 1:
                                 System.out.print("Enter new password: ");
                                 String newPassword = scanner.nextLine();
                                 if (newPassword.isEmpty()) {
@@ -916,10 +924,14 @@ public class Main {
                                     System.out.println("Password must be between 5 and 12 characters. Change cancelled.");
                                     continue;
                                 }
-                                customer.resetPassword(newPassword);
-                                System.out.println("Password changed successfully.");
+                                try {
+                                    customer.resetPassword(newPassword);
+                                    System.out.println("Password changed successfully.");
+                                } catch (IllegalArgumentException e) {
+                                    System.out.println("Error: " + e.getMessage());
+                                }
                                 break;
-                            case 2: // View Order History
+                            case 2:
                                 System.out.println("\n=== Order History ===");
                                 try {
                                     String historyStr = history.toString();
@@ -934,7 +946,7 @@ public class Main {
                                             continue;
                                         }
                                         if (orderIndex == 0) {
-                                            break; // Go back to Profile menu
+                                            break;
                                         }
                                         Order selectedOrder = history.getOrderByIndex(orderIndex);
                                         if (selectedOrder == null) {
@@ -944,14 +956,12 @@ public class Main {
                                         if (selectedOrder.getPaymentStatus().equals("Cancelled")) {
                                             System.out.println("Order ID " + selectedOrder.getOrderId() + " has been cancelled.");
                                         } else {
-                                            // Reconstruct invoice for Completed or Pending orders
                                             Invoice invoice;
                                             if (selectedOrder.getPaymentStatus().equals("Completed")) {
                                                 invoice = new Invoice(selectedOrder, customer, selectedOrder.getPaymentMethod(),
                                                                      true, selectedOrder.getBankName(), selectedOrder.getBankUsername(),
                                                                      null, null, null, selectedOrder.getBankDiscount());
                                             } else {
-                                                // Assume COD for Pending
                                                 invoice = new Invoice(selectedOrder, customer, "cod_payment", false, null, null,
                                                                      selectedOrder.getDeliveryAddress(), selectedOrder.getContactInfo(),
                                                                      LocalDate.now().plusDays(3));
@@ -963,7 +973,7 @@ public class Main {
                                     System.out.println("Error loading order history: " + e.getMessage());
                                 }
                                 break;
-                            case 3: // Back to Main Menu
+                            case 3:
                                 inProfileMenu = false;
                                 break;
                             default:

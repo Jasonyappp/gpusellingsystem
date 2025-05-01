@@ -67,27 +67,28 @@ public class Invoice {
         }
         sb.append("------------------------------------------------------------------------------\n");
         double total = ORDER.getTotal();
-        sb.append(String.format("%-30s: RM %-10.2f\n", "Total (Before Discount)", total));
+        sb.append(String.format("%-34s: RM %-10.2f\n", "Total (Before Discount)", total));
         double customerDiscount = CUSTOMER.getDiscount();
         if (customerDiscount < 0 || customerDiscount > 1) {
             customerDiscount = 0; // Fallback to no discount if invalid
         }
         double totalAfterCustomerDiscount = total * (1 - customerDiscount);
-        sb.append(String.format("%-30s: %-10.1f%%\n", "Customer Discount", customerDiscount * 100));
-        sb.append(String.format("%-30s: RM %-10.2f\n", "Total (After Customer Discount)", totalAfterCustomerDiscount));
-        sb.append(String.format("%-30s: %-10s\n", "Payment Method", 
-                PAYMENTMETHOD.equals("online_banking") ? "Online Banking" : "Cash on Delivery"));
+        sb.append(String.format("%-34s: %-10.1f%%\n", "Member Discount", customerDiscount * 100));
+        sb.append(String.format("%-34s: RM %-10.2f\n", "Total (After Member Discount)", totalAfterCustomerDiscount));
+
         if (PAYMENTMETHOD.equals("online_banking")) {
-            sb.append(String.format("%-30s: %-10s\n", "Bank", BANKNAME));
-            sb.append(String.format("%-30s: %-10.1f%%\n", "Bank Discount", BANKDISCOUNT * 100));
-            sb.append(String.format("%-30s: RM %-10.2f\n", "Total (After Bank Discount)", 
+            //sb.append(String.format("%-30s: %-10s\n", "Bank", BANKNAME));
+            sb.append(String.format("%-34s: %-10.1f%%\n", "Bank Discount", BANKDISCOUNT * 100));
+            sb.append(String.format("%-34s: RM %-10.2f\n", "Grand Total (After Bank Discount)", 
                     totalAfterCustomerDiscount * (1 - BANKDISCOUNT)));
         }
         sb.append("------------------------------------------------------------------------------\n");
         if (PAYMENTMETHOD.equals("online_banking")) {
             sb.append("Bank Information:\n");
-            sb.append(String.format("  %-12s: %s\n", "Bank", BANKNAME));
-            sb.append(String.format("  %-12s: %s\n", "Username", BANKUSERNAME));
+                    sb.append(String.format("  %-34s: %-10s\n", "Payment Method", 
+                PAYMENTMETHOD.equals("online_banking") ? "Online Banking" : "Cash on Delivery"));
+            sb.append(String.format("  %-34s: %-10s\n", "Bank", BANKNAME));
+            sb.append(String.format("  %-34s: %-10s\n", "Username", BANKUSERNAME));
         } else {
             sb.append("Delivery Information:\n");
             sb.append(String.format("  %-12s: %s\n", "Address", DELIVERYADDRESS));

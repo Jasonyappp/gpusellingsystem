@@ -22,6 +22,10 @@ public class ProductManager {
         if (name == null || name.trim().isEmpty() || price < 0 || quantity < 0 || detail == null || detail.trim().isEmpty()) {
             return false;
         }
+        // Check if a product with the same name and type already exists
+        if (productNameExistsForType(name, type)) {
+            return false; // Prevent adding duplicate name for the same type
+        }
         int newProductId = nextProductId;
         while (products.containsKey(newProductId)) {
             newProductId++;
@@ -38,6 +42,17 @@ public class ProductManager {
         nextProductId = newProductId + 1;
         saveToFile(); // Save to file after adding a product
         return true;
+    }
+
+    // New helper method to check if a product name already exists for a given type
+    private boolean productNameExistsForType(String name, String type) {
+        for (Product product : products.values()) {
+            if (product.getName().equalsIgnoreCase(name) && 
+                product.getClass().getSimpleName().equalsIgnoreCase(type)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean removeProduct(int productId) {
@@ -78,7 +93,7 @@ public class ProductManager {
         return null;
     }
     
-     public Product searchProductById(int productId) {
+    public Product searchProductById(int productId) {
         return products.get(productId);
     }
 
