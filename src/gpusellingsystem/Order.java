@@ -15,7 +15,7 @@ public class Order implements Serializable {
     private final double TOTAL; // Only keep total, remove discountedTotal
     private final LocalDate ORDER_DATE;
     private String paymentStatus;
-    private String paymentMethod; // 支付方式（"online_banking" 或 "cod_payment"）
+    private String paymentMethod; // 支付方式（"online_banking" 或 "pod_payment"）
     private String bankName;     // 银行名称（仅在线支付）
     private String bankUsername; // 银行用户名（仅在线支付）
     private double bankDiscount;  // 银行折扣（仅在线支付）
@@ -186,7 +186,7 @@ public class Order implements Serializable {
                 sb.append(String.format("Bank: %s\n", bankName != null ? bankName : "Unknown"));
                 sb.append(String.format("Bank Username: %s\n", bankUsername != null ? bankUsername : "Unknown"));
                 sb.append(String.format("Bank Discount: %.1f%%\n", bankDiscount * 100));
-            } else if (paymentMethod.equals("cod_payment")) {
+            } else if (paymentMethod.equals("pod_payment")) {
                 sb.append(String.format("Delivery Address: %s\n", deliveryAddress != null ? deliveryAddress : "Unknown"));
                 sb.append(String.format("Contact Info: %s\n", contactInfo != null ? contactInfo : "Unknown"));
             }

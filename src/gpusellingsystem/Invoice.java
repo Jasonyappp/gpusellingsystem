@@ -88,7 +88,7 @@ public class Invoice {
                     sb.append(String.format("  %-34s: %-10s\n", "Payment Method", 
                 PAYMENTMETHOD.equals("online_banking") ? "Online Banking" : "Cash on Delivery"));
             sb.append(String.format("  %-34s: %-10s\n", "Bank", BANKNAME));
-            sb.append(String.format("  %-34s: %-10s\n", "Username", BANKUSERNAME));
+
         } else {
             sb.append("Delivery Information:\n");
             sb.append(String.format("  %-12s: %s\n", "Address", DELIVERYADDRESS));

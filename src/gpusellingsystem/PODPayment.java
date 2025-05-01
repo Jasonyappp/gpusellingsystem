@@ -9,7 +9,7 @@ import java.util.Map;
  *
  * @author chong
  */
-public class CODPayment extends PaymentMethod {
+public class PODPayment extends PaymentMethod {
     @Override
     public PaymentResult processPayment(Order order, Customer customer, double paymentAmount, Map<String, String> details) {
         double expectedAmount = order.getTotal();
@@ -30,7 +30,7 @@ public class CODPayment extends PaymentMethod {
     }
 
         LocalDate deliveryDate = LocalDate.now().plusDays(3);
-        Invoice invoice = new Invoice(order, customer, "cod_payment", false, null, null, deliveryAddress, contactInfo, deliveryDate);
+        Invoice invoice = new Invoice(order, customer, "pod_payment", false, null, null, deliveryAddress, contactInfo, deliveryDate);
         return new PaymentResult(true, "Cash on delivery order confirmed!", invoice);
     }
 }

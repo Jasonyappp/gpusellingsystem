@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.HashMap;
 import java.util.Map;
-import java.time.format.DateTimeFormatter;
 
 public class Main {
     private static ProductManager inventory = new ProductManager();
@@ -847,9 +846,9 @@ public class Main {
                                         }
                                     }
                                 } else if (paymentMethod.equalsIgnoreCase("Cash on Delivery")) {
-                                    paymentProcessor = new CODPayment();
-                                    boolean codPaymentCompleted = false;
-                                    while (!codPaymentCompleted) {
+                                    paymentProcessor = new PODPayment();
+                                    boolean podPaymentCompleted = false;
+                                    while (!podPaymentCompleted) {
                                         System.out.println("\n=== Cash on Delivery ===");
                                         System.out.print("Enter delivery address: ");
                                         String deliveryAddress = scanner.nextLine().trim();
@@ -861,7 +860,7 @@ public class Main {
 
                                         if (result.isSuccess()) {
                                             order.setPaymentStatus("Pending");
-                                            order.setPaymentMethod("cod_payment");
+                                            order.setPaymentMethod("pod_payment");
                                             order.setDeliveryAddress(deliveryAddress);
                                             order.setContactInfo(contactInfo);
                                             history.addOrder(order);
@@ -874,7 +873,7 @@ public class Main {
                                             }
                                             System.out.println("\n" + result.getInvoice().toFormattedString());
                                             cart.clearCart();
-                                            codPaymentCompleted = true;
+                                            podPaymentCompleted = true;
                                             paymentCompleted = true;
                                             break paymentOptions;
                                         } else {
@@ -962,7 +961,7 @@ public class Main {
                                                                      true, selectedOrder.getBankName(), selectedOrder.getBankUsername(),
                                                                      null, null, null, selectedOrder.getBankDiscount());
                                             } else {
-                                                invoice = new Invoice(selectedOrder, customer, "cod_payment", false, null, null,
+                                                invoice = new Invoice(selectedOrder, customer, "pod_payment", false, null, null,
                                                                      selectedOrder.getDeliveryAddress(), selectedOrder.getContactInfo(),
                                                                      LocalDate.now().plusDays(3));
                                             }

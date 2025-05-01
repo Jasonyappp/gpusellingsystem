@@ -1,0 +1,9 @@
+1000,zitian,2025-05-01,4500.00,Completed,online_banking,Maybank,zitian,0.03,,|
+1001,zitian,2025-05-01,4500.00,Completed,online_banking,Maybank,yu,0.03,,|
+1002,zitian,2025-05-01,4500.00,Completed,online_banking,Maybank,y,0.03,,|
+1003,zitian,2025-05-01,9000.00,Completed,online_banking,Maybank,uyt,0.03,,|10,AMD Radeon RX 7900 XTX,4500.00,2,GPU;
+1004,zitian,2025-05-01,1800.00,Cancelled,,,,0.00,,|7,NVIDIA GeForce RTX 3060,1800.00,1,GPU;
+1005,zitian,2025-05-01,1800.00,Cancelled,,,,0.00,,|7,NVIDIA GeForce RTX 3060,1800.00,1,GPU;
+1006,zitian,2025-05-01,1800.00,Pending,cod_payment,,,0.00,uytr,7654328765|7,NVIDIA GeForce RTX 3060,1800.00,1,GPU;
+1007,zitian,2025-05-01,4500.00,Completed,online_banking,Maybank,uyt,0.03,,|10,AMD Radeon RX 7900 XTX,4500.00,1,GPU;
+1008,zitian,2025-05-01,4500.00,Completed,online_banking,Maybank,uy,0.03,,|10,AMD Radeon RX 7900 XTX,4500.00,1,GPU;
