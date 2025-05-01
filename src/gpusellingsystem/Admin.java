@@ -17,7 +17,7 @@ public class Admin extends User {
         super(userId, username, password);
     }
 
-    // 实现抽象方法
+    // 实现抽象方法ok
     @Override
     public boolean isAdmin() {
         return true;
