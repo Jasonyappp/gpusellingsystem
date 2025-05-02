@@ -44,17 +44,11 @@ public class UserManager {
             finalPassword = newPassword;
         }
 
-        User newUser;
-        if (isMember) {
-            newUser = new Member(user.getUserId(), finalUsername, finalPassword);
-        } else {
-            newUser = new NonMember(user.getUserId(), finalUsername, finalPassword);
-        }
-
+        Customer newCustomer = new Customer(user.getUserId(), finalUsername, finalPassword, isMember);
         if (!finalUsername.equalsIgnoreCase(oldUsername)) {
             User.getUsers().remove(oldUsername.toLowerCase());
         }
-        User.getUsers().put(finalUsername.toLowerCase(), newUser);
+        User.getUsers().put(finalUsername.toLowerCase(), newCustomer);
         User.saveUsersToFile();
         return true;
     }
@@ -69,11 +63,10 @@ public class UserManager {
     
     public boolean upgradeToMember(String username) {
         User user = User.getUsers().get(username.toLowerCase());
-        if (user == null || user.isAdmin() || user instanceof Member) {
+        if (user == null || user.isAdmin() || (user instanceof Customer && ((Customer) user).isMember())) {
             return false;
         }
-        User newUser = new Member(user.getUserId(), user.getUsername(), user.getPassword());
-        User.getUsers().put(username.toLowerCase(), newUser);
+        ((Customer) user).setMember(true);
         User.saveUsersToFile();
         return true;
     }

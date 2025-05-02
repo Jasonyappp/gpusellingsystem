@@ -30,9 +30,9 @@ public abstract class User {
     }
 
     public static void loadUsersFromFile() {
-        users.clear();
         File file = new File(USERS_FILE_PATH);
         if (!file.exists()) {
+            System.err.println("Users file not found: " + USERS_FILE_PATH);
             return;
         }
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
@@ -40,6 +40,7 @@ public abstract class User {
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
                 if (parts.length != 5) {
+                    System.err.println("Invalid user line format in users.txt: " + line);
                     continue;
                 }
                 try {
@@ -53,22 +54,19 @@ public abstract class User {
                     if (isAdmin) {
                         user = new Admin(userId, username, password);
                     } else {
-                        if (isMember) {
-                            user = new Member(userId, username, password);
-                        } else {
-                            user = new NonMember(userId, username, password);
-                        }
+                        user = new Customer(userId, username, password, isMember);
                     }
                     users.put(username.toLowerCase(), user);
                     if (userId >= nextUserId) {
                         nextUserId = userId + 1;
                     }
                 } catch (NumberFormatException e) {
+                    System.err.println("Skipping invalid user line in users.txt: " + line);
                     continue;
                 }
             }
         } catch (IOException e) {
-            // Silently handle IOException
+            System.err.println("Error reading users.txt: " + e.getMessage());
         }
     }
 
@@ -84,14 +82,14 @@ public abstract class User {
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE_PATH))) {
                 for (User user : users.values()) {
                     boolean isAdmin = user.isAdmin();
-                    boolean isMember = user instanceof Member;
+                    boolean isMember = user instanceof Customer && ((Customer) user).isMember();
                     writer.write(String.format("%d,%s,%s,%b,%b",
                             user.getUserId(), user.getUsername(), user.getPassword(), isAdmin, isMember));
                     writer.newLine();
                 }
             }
         } catch (IOException e) {
-            // Silently handle IOException
+            System.err.println("Error writing to users.txt: " + e.getMessage());
         }
     }
 

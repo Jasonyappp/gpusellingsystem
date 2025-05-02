@@ -15,16 +15,15 @@ public class ProductManager {
     private static final String FILE_PATH = "inventory_data/inventory.txt";
 
     public ProductManager() {
-        loadFromFile(); // Load products from file on initialization
+        loadFromFile();
     }
 
-    public boolean addProduct(String name, double price, int quantity, String detail, String type) {
-        if (name == null || name.trim().isEmpty() || price < 0 || quantity < 0 || detail == null || detail.trim().isEmpty()) {
+    public boolean addProduct(String name, double price, int quantity, String detail, String type, int spec) {
+        if (name == null || name.trim().isEmpty() || price < 0 || quantity < 0 || detail == null || detail.trim().isEmpty() || spec < 1) {
             return false;
         }
-        // Check if a product with the same name and type already exists
         if (productNameExistsForType(name, type)) {
-            return false; // Prevent adding duplicate name for the same type
+            return false;
         }
         int newProductId = nextProductId;
         while (products.containsKey(newProductId)) {
@@ -32,19 +31,18 @@ public class ProductManager {
         }
         Product product;
         if ("GPU".equalsIgnoreCase(type)) {
-            product = new GPU(newProductId, name, price, quantity, detail);
+            product = new GPU(newProductId, name, price, quantity, detail, spec);
         } else if ("CPU".equalsIgnoreCase(type)) {
-            product = new CPU(newProductId, name, price, quantity, detail);
+            product = new CPU(newProductId, name, price, quantity, detail, spec);
         } else {
-            return false; // Invalid type
+            return false;
         }
         products.put(newProductId, product);
         nextProductId = newProductId + 1;
-        saveToFile(); // Save to file after adding a product
+        saveToFile();
         return true;
     }
 
-    // New helper method to check if a product name already exists for a given type
     private boolean productNameExistsForType(String name, String type) {
         for (Product product : products.values()) {
             if (product.getName().equalsIgnoreCase(name) && 
@@ -58,7 +56,7 @@ public class ProductManager {
     public boolean removeProduct(int productId) {
         boolean removed = products.remove(productId) != null;
         if (removed) {
-            saveToFile(); // Save to file after removing a product
+            saveToFile();
         }
         return removed;
     }
@@ -80,7 +78,7 @@ public class ProductManager {
         if (detail != null && !detail.trim().isEmpty()) {
             product.setDetail(detail);
         }
-        saveToFile(); // Save to file after updating a product
+        saveToFile();
         return true;
     }
 
@@ -102,17 +100,17 @@ public class ProductManager {
     }
 
     private void loadFromFile() {
-        products.clear(); // Clear current products to avoid duplicates
+        products.clear();
         File file = new File(FILE_PATH);
         if (!file.exists()) {
-            return; // File doesn't exist, no products to load
+            return;
         }
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
-                if (parts.length != 6) { // Expecting 6 fields including type
-                    continue; // Skip malformed lines
+                if (parts.length != 7) {
+                    continue;
                 }
                 try {
                     int productId = Integer.parseInt(parts[0]);
@@ -121,21 +119,21 @@ public class ProductManager {
                     int quantity = Integer.parseInt(parts[3]);
                     String detail = parts[4];
                     String type = parts[5];
+                    int spec = Integer.parseInt(parts[6]);
                     Product product;
                     if ("GPU".equalsIgnoreCase(type)) {
-                        product = new GPU(productId, name, price, quantity, detail);
+                        product = new GPU(productId, name, price, quantity, detail, spec);
                     } else if ("CPU".equalsIgnoreCase(type)) {
-                        product = new CPU(productId, name, price, quantity, detail);
+                        product = new CPU(productId, name, price, quantity, detail, spec);
                     } else {
-                        continue; // Skip invalid types
+                        continue;
                     }
                     products.put(productId, product);
-                    // Update nextProductId to be higher than the largest productId
                     if (productId >= nextProductId) {
                         nextProductId = productId + 1;
                     }
                 } catch (NumberFormatException e) {
-                    continue; // Skip lines with parsing errors
+                    continue;
                 }
             }
         } catch (IOException e) {
@@ -145,7 +143,6 @@ public class ProductManager {
 
     private void saveToFile() {
         try {
-            // Create inventory_data folder if it doesn't exist
             File dir = new File("inventory_data");
             if (!dir.exists()) {
                 if (!dir.mkdirs()) {
@@ -156,8 +153,10 @@ public class ProductManager {
 
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_PATH))) {
                 for (Product p : products.values()) {
-                    writer.write(String.format("%d,%s,%.2f,%d,%s,%s",
-                            p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(), p.getClass().getSimpleName()));
+                    String spec = p instanceof GPU ? String.valueOf(((GPU) p).getVRAM()) : String.valueOf(((CPU) p).getCoreCount());
+                    writer.write(String.format("%d,%s,%.2f,%d,%s,%s,%s",
+                            p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(), 
+                            p.getClass().getSimpleName(), spec));
                     writer.newLine();
                 }
             }

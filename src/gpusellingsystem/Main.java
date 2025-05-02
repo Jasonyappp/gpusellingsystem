@@ -1,5 +1,6 @@
 package gpusellingsystem;
 
+import java.io.File;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,16 +57,29 @@ public class Main {
         scanner.close();
     }
 
-    private static void initializeUsers() {
-        User.loadUsersFromFile();
-        if (User.getUsers().isEmpty()) {
-            User.getUsers().put("admin_leong", new Admin(User.getNextUserId(), "admin_leong", "adminpass"));
-            User.incrementNextUserId();
-            User.getUsers().put("admin_yap", new Admin(User.getNextUserId(), "admin_yap", "adminpass"));
-            User.incrementNextUserId();
-            User.saveUsersToFile();
-        }
+  private static void initializeUsers() {
+    User.loadUsersFromFile(); // Load existing users
+    boolean saveNeeded = false;
+    
+    // Check and add admin_leong if missing
+    if (!User.getUsers().containsKey("admin_leong")) {
+        User.getUsers().put("admin_leong", new Admin(User.getNextUserId(), "admin_leong", "adminpass"));
+        User.incrementNextUserId();
+        saveNeeded = true;
     }
+    
+    // Check and add admin_yap if missing
+    if (!User.getUsers().containsKey("admin_yap")) {
+        User.getUsers().put("admin_yap", new Admin(User.getNextUserId(), "admin_yap", "adminpass"));
+        User.incrementNextUserId();
+        saveNeeded = true;
+    }
+    
+    // Save to users.txt only if admins were added
+    if (saveNeeded) {
+        User.saveUsersToFile();
+    }
+}
 
     private static User handleLogin() {
         System.out.print("Enter username: ");
@@ -187,7 +201,7 @@ public class Main {
             return;
         }
         
-        User user = new NonMember(User.getNextUserId(), username, password);
+        User user = new Customer(User.getNextUserId(), username, password, false);
         User.incrementNextUserId();
         User.getUsers().put(username.toLowerCase(), user);
         User.saveUsersToFile();
@@ -195,13 +209,15 @@ public class Main {
     }
 
     private static void handleAdminMenu(Admin admin) {
+        OrderHistory adminOrderHistory = new OrderHistory(0); // Generic OrderHistory for admin report
         boolean inAdminMenu = true;
         while (inAdminMenu && admin.isLoggedIn()) {
             System.out.println("\n=== Admin Page ===");
             System.out.println("1. Manage Product");
             System.out.println("2. Manage Customers");
-            System.out.println("3. Logout");
-            System.out.print("Enter your choice (1-3): ");
+            System.out.println("3. Generate System Report");
+            System.out.println("4. Logout");
+            System.out.print("Enter your choice (1-4): ");
 
             int choice;
             try {
@@ -268,10 +284,22 @@ public class Main {
                                 }
                                 System.out.print("Enter product detail: ");
                                 String detail = scanner.nextLine();
-                                if (inventory.addProduct(name, price, quantity, detail, type)) {
+                                System.out.print(type.equals("GPU") ? "Enter VRAM (GB): " : "Enter core count: ");
+                                int spec;
+                                try {
+                                    spec = Integer.parseInt(scanner.nextLine());
+                                    if (spec < 1) {
+                                        System.out.println("Invalid " + (type.equals("GPU") ? "VRAM" : "core count") + ". Must be at least 1.");
+                                        break;
+                                    }
+                                } catch (NumberFormatException e) {
+                                    System.out.println("Invalid " + (type.equals("GPU") ? "VRAM" : "core count") + ". Please enter a valid number.");
+                                    break;
+                                }
+                                if (inventory.addProduct(name, price, quantity, detail, type, spec)) {
                                     System.out.println("Product added successfully.");
                                 } else {
-                                    System.out.println("Invalid product name. This product has already exist.");
+                                    System.out.println("Invalid product name. This product has already exist or invalid input.");
                                 }
                                 break;
                             case 2:
@@ -361,14 +389,14 @@ public class Main {
                                 if (inventory.getProducts().isEmpty()) {
                                     System.out.println("No products available.");
                                 } else {
-                                    System.out.printf("%-8s%-30s%-15s%-12s%-50s%-10s%n",
-                                            "ID", "Name", "Price", "Quantity", "Detail", "Type");
-                                    System.out.printf("%-8s%-30s%-15s%-12s%-50s%-10s%n",
-                                            "--------", "------------------------------", "---------------", "------------", "--------------------------------------------------", "----------");
+                                    System.out.printf("%-8s%-30s%-15s%-12s%-50s%-10s%-15s%-15s%n",
+                                            "ID", "Name", "Price", "Quantity", "Detail", "Type", "Feature", "High Perf");
+                                    System.out.printf("%-8s%-30s%-15s%-12s%-50s%-10s%-15s%-15s%n",
+                                            "--------", "------------------------------", "---------------", "------------", "--------------------------------------------------", "----------", "---------------", "---------------");
                                     for (Product p : inventory.getProducts().values()) {
-                                        System.out.printf("%-8d%-30sRM%-13.2f%-12d%-50s%-10s%n",
+                                        System.out.printf("%-8d%-30sRM%-13.2f%-12d%-50s%-10s%-15s%-15s%n",
                                                 p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(),
-                                                p.getClass().getSimpleName());
+                                                p.getClass().getSimpleName(), p.getSpecialFeature(), p.isHighPerformance() ? "Yes" : "No");
                                     }
                                 }
                                 break;
@@ -406,14 +434,13 @@ public class Main {
                                     System.out.println("No customers found.");
                                 } else {
                                     System.out.printf("%-8s%-25s%-15s%-12s%n",
-                                            "ID", "Username", "Type", "Discount");
+                                            "ID", "Username", "Member", "Discount");
                                     System.out.printf("%-8s%-25s%-15s%-12s%n",
                                             "--------", "-------------------------", "---------------", "------------");
                                     for (Customer customer : customers) {
-                                        String customerType = customer instanceof Member ? "Member" : "NonMember";
                                         System.out.printf("%-8d%-25s%-15s%.1f%%%n",
                                                 customer.getUserId(), customer.getUsername(),
-                                                customerType, customer.getDiscount() * 100);
+                                                customer.isMember() ? "Yes" : "No", customer.getDiscount() * 100);
                                     }
                                 }
                                 break;
@@ -437,12 +464,12 @@ public class Main {
                                 System.out.println("Current username: " + customerToUpdate.getUsername() + ", enter new username (or press Enter to keep): ");
                                 String newUsername = scanner.nextLine();
                                 
-                                boolean wasMember = customerToUpdate instanceof Member;
+                                boolean wasMember = customerToUpdate.isMember();
                                 boolean isMember = wasMember;
                                 boolean membershipChanged = false;
 
                                 while (true) {
-                                    System.out.println("Current type: " + (wasMember ? "Member" : "NonMember") + ", make member? (y/n): ");
+                                    System.out.println("Current membership: " + (wasMember ? "Member" : "Non-Member") + ", make member? (y/n): ");
                                     String memberChoice = scanner.nextLine().trim().toLowerCase();
                                     if (memberChoice.equals("y")) {
                                         isMember = true;
@@ -470,10 +497,9 @@ public class Main {
                                 String searchUsername = scanner.nextLine();
                                 Customer foundCustomer = userManager.searchCustomer(searchUsername);
                                 if (foundCustomer != null) {
-                                    String customerType = foundCustomer instanceof Member ? "Member" : "NonMember";
-                                    System.out.printf("Found: ID: %d, Username: %s, Type: %s, Discount: %.1f%%\n",
+                                    System.out.printf("Found: ID: %d, Username: %s, Member: %s, Discount: %.1f%%\n",
                                             foundCustomer.getUserId(), foundCustomer.getUsername(),
-                                            customerType, foundCustomer.getDiscount() * 100);
+                                            foundCustomer.isMember() ? "Yes" : "No", foundCustomer.getDiscount() * 100);
                                 } else {
                                     System.out.println("Customer '" + searchUsername + "' not found.");
                                 }
@@ -486,15 +512,19 @@ public class Main {
                         }
                     }
                 }
-                case 3 -> {
+           case 3 -> {
+                    String report = admin.generateSystemReport(userManager, inventory);
+                    System.out.println(report);
+                }
+                case 4 -> {
                     admin.logout();
                     inAdminMenu = false;
+                    System.out.println("Logged out successfully.");
                 }
-                default -> System.out.println("Invalid choice. Please enter 1, 2, or 3.");
+                default -> System.out.println("Invalid choice. Please enter 1, 2, 3, or 4.");
             }
         }
     }
-
     private static void handleCustomerMenu(Customer customer, ProductManager inventory) {
         Cart cart = new Cart(customer.getUserId());
         OrderHistory history = new OrderHistory(customer.getUserId());
@@ -547,14 +577,14 @@ public class Main {
                             if (filteredProducts.isEmpty()) {
                                 System.out.println("No " + productType + " products available!");
                             } else {
-                                System.out.printf("%-8s%-30s%-15s%-12s%-50s%-15s%n", 
-                                    "ID", "Name", "Price", "Quantity", "Detail", "Type");
-                                System.out.printf("%-8s%-30s%-15s%-12s%-50s%-15s%n", 
-                                    "--------", "------------------------------", "---------------", "------------", "--------------------------------------------------", "---------------");
+                                System.out.printf("%-8s%-30s%-15s%-12s%-50s%-10s%-15s%-15s%n",
+                                        "ID", "Name", "Price", "Quantity", "Detail", "Type", "Feature", "High Perf");
+                                System.out.printf("%-8s%-30s%-15s%-12s%-50s%-10s%-15s%-15s%n",
+                                        "--------", "------------------------------", "---------------", "------------", "--------------------------------------------------", "----------", "---------------", "---------------");
                                 for (Product p : filteredProducts) {
-                                    System.out.printf("%-8d%-30sRM%-13.2f%-12d%-50s%-15s%n", 
-                                        p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(), 
-                                        p.getClass().getSimpleName());
+                                    System.out.printf("%-8d%-30sRM%-13.2f%-12d%-50s%-10s%-15s%-15s%n",
+                                            p.getProductId(), p.getName(), p.getPrice(), p.getQuantity(), p.getDetail(),
+                                            p.getClass().getSimpleName(), p.getSpecialFeature(), p.isHighPerformance() ? "Yes" : "No");
                                 }
                             }
 
@@ -700,7 +730,7 @@ public class Main {
                     System.out.println("\n=== Order Confirmation ===");
                     Order order;
                     try {
-                        order = new Order(cart, customer);
+                        order = new Order(cart, customer); // Locks in current discount (0% for non-members)
                     } catch (RuntimeException e) {
                         System.out.println("Error creating order: " + e.getMessage());
                         continue;
@@ -849,18 +879,9 @@ public class Main {
                                                 order.setBankUsername(details.get("bankUsername"));
                                                 order.setBankDiscount(((OnlineBankingPayment.PaymentResult) result).getBankDiscount());
                                                 history.addOrder(order);
-                                                if (order.getTotal() >= 5000 && userManager.upgradeToMember(customer.getUsername())) {
-                                                    System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
-                                                    User updatedUser = User.getUsers().get(customer.getUsername().toLowerCase());
-                                                    if (updatedUser instanceof Customer) {
-                                                        customer = (Customer) updatedUser;
-                                                    }
-                                                }
                                                 System.out.println("\n" + result.getInvoice().toFormattedString());
-                                                cart.clearCart();
                                                 paymentCompleted = true;
                                                 validBankDetails = true;
-                                                break paymentOptions;
                                             } else {
                                                 System.out.println("Payment failed: " + result.getMessage());
                                                 System.out.println("Please try again.");
@@ -890,16 +911,24 @@ public class Main {
                                             order.setContactInfo(contactInfo);
                                             history.addOrder(order);
                                             System.out.println("\n" + result.getInvoice().toFormattedString());
-                                            cart.clearCart();
                                             podPaymentCompleted = true;
                                             paymentCompleted = true;
-                                            break paymentOptions;
                                         } else {
                                             System.out.println("Payment failed: " + result.getMessage());
                                         }
                                     }
                                 }
                             }
+                            // Check for membership upgrade AFTER payment is complete
+                            if (order.getTotal() >= 5000 && !customer.isMember() && userManager.upgradeToMember(customer.getUsername())) {
+                                System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
+                                User updatedUser = User.getUsers().get(customer.getUsername().toLowerCase());
+                                if (updatedUser instanceof Customer) {
+                                    customer = (Customer) updatedUser; // Update customer for future interactions
+                                }
+                            }
+                            cart.clearCart();
+                            break paymentOptions;
                         } else if (orderChoice == 2) {
                             order.setPaymentStatus("Cancelled");
                             history.addOrder(order);
@@ -916,7 +945,7 @@ public class Main {
                         System.out.println("\n=== Profile ===");
                         System.out.println("User ID: " + customer.getUserId());
                         System.out.println("Username: " + customer.getUsername());
-                        System.out.println("Membership Status: " + (customer instanceof Member ? "Member" : "NonMember"));
+                        System.out.println("Membership Status: " + (customer.isMember() ? "Member" : "Non-Member"));
                         System.out.println("1. Change Password");
                         System.out.println("2. View Order History");
                         System.out.println("3. Back to Main Menu");

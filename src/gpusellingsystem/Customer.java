@@ -1,23 +1,34 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package gpusellingsystem;
 
-/**
- *
- * @author leong
- */
+public class Customer extends User {
+    private boolean isMember;
 
-// 继承：Customer继承User
-public abstract class Customer extends User {
-    public Customer(int userId, String username, String password) {
+    public Customer(int userId, String username, String password, boolean isMember) {
         super(userId, username, password);
+        this.isMember = isMember;
+    }
+
+    public boolean isMember() {
+        return isMember;
+    }
+
+    public void setMember(boolean isMember) {
+        this.isMember = isMember;
     }
 
     @Override
     public boolean isAdmin() {
         return false;
     }
-    public abstract boolean isMember();
+
+    @Override
+    public double getDiscount() {
+        return isMember ? 0.1 : 0.0;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Customer [ID: %d, Username: %s, Member: %s, Discount: %.1f%%]",
+                getUserId(), getUsername(), isMember ? "Yes" : "No", getDiscount() * 100);
+    }
 }
