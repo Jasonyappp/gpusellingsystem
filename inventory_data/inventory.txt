@@ -1,4 +1,6 @@
-1,RTX 1060,1000.00,994,NVIDIA,GPU,10
-2,RTX 3060,100.00,1000,NVIDIA,GPU,10
-3,RTX 6060,1000.00,20,hi,GPU,20
-4,RTX 6767,100.00,14,pp,GPU,20
+8,NVIDIA GeForce RTX 4060,1900.00,92,Best for 1080p gaming with DLSS.,GPU,8
+9,AMD Radeon RX 7800 XT,2300.00,100,Strong 1440p GPU with 16GB VRAM,GPU,16
+10,NVIDIA GeForce RTX 4070,2615.00,99,Smooth 1440p gaming with ray tracing.,GPU,12
+11,i7-13700K,1900.00,99,Fast hybrid CPU for gaming and multitasking.,CPU,16
+12,Ryzen 7 7800X3D,2140.00,99,Top gaming CPU with 3D cache.,CPU,8
+13,Intel Core i5-13400F,900.00,99,Great value CPU for daily use and gaming.,CPU,10

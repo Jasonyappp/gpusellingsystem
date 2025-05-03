@@ -58,24 +58,21 @@ public class Main {
     }
 
   private static void initializeUsers() {
-    User.loadUsersFromFile(); // Load existing users
+    User.loadUsersFromFile(); 
     boolean saveNeeded = false;
     
-    // Check and add admin_leong if missing
     if (!User.getUsers().containsKey("admin_leong")) {
         User.getUsers().put("admin_leong", new Admin(User.getNextUserId(), "admin_leong", "adminpass"));
         User.incrementNextUserId();
         saveNeeded = true;
     }
     
-    // Check and add admin_yap if missing
     if (!User.getUsers().containsKey("admin_yap")) {
         User.getUsers().put("admin_yap", new Admin(User.getNextUserId(), "admin_yap", "adminpass"));
         User.incrementNextUserId();
         saveNeeded = true;
     }
     
-    // Save to users.txt only if admins were added
     if (saveNeeded) {
         User.saveUsersToFile();
     }
@@ -209,7 +206,7 @@ public class Main {
     }
 
     private static void handleAdminMenu(Admin admin) {
-        OrderHistory adminOrderHistory = new OrderHistory(0); // Generic OrderHistory for admin report
+        OrderHistory adminOrderHistory = new OrderHistory(0); 
         boolean inAdminMenu = true;
         while (inAdminMenu && admin.isLoggedIn()) {
             System.out.println("\n=== Admin Page ===");
@@ -730,7 +727,7 @@ public class Main {
                     System.out.println("\n=== Order Confirmation ===");
                     Order order;
                     try {
-                        order = new Order(cart, customer); // Locks in current discount (0% for non-members)
+                        order = new Order(cart, customer);
                     } catch (RuntimeException e) {
                         System.out.println("Error creating order: " + e.getMessage());
                         continue;
@@ -919,12 +916,12 @@ public class Main {
                                     }
                                 }
                             }
-                            // Check for membership upgrade AFTER payment is complete
+                            
                             if (order.getTotal() >= 5000 && !customer.isMember() && userManager.upgradeToMember(customer.getUsername())) {
                                 System.out.println("Congratulations! Your order total exceeds RM5000 and you have been automatically upgraded to a member. You can enjoy a 10% member discount on your next purchase!");
                                 User updatedUser = User.getUsers().get(customer.getUsername().toLowerCase());
                                 if (updatedUser instanceof Customer) {
-                                    customer = (Customer) updatedUser; // Update customer for future interactions
+                                    customer = (Customer) updatedUser; 
                                 }
                             }
                             cart.clearCart();

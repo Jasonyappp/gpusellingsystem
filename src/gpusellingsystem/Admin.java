@@ -1,21 +1,15 @@
 package gpusellingsystem;
 
-/**
- *
- * @author leong
- */
 public class Admin extends User {
     public Admin(int userId, String username, String password) {
         super(userId, username, password);
     }
 
-    // Implement abstract method from User
     @Override
     public boolean isAdmin() {
         return true;
     }
 
-    // Updated feature: Generate a system report with total inventory quantity, no OrderHistory
     public String generateSystemReport(UserManager userManager, ProductManager inventory) {
         int totalInventoryQuantity = inventory.getProducts().values().stream()
                 .mapToInt(Product::getQuantity)

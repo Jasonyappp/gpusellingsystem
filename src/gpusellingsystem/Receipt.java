@@ -1,17 +1,11 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
+
 package gpusellingsystem;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-/**
- *
- * @author chong
- */
+
 public class Receipt {
     private final Order ORDER;
-    private final Customer CUSTOMER; // Add Customer to calculate discount
+    private final Customer CUSTOMER; 
     private final String PAYMENTMETHOD;
     private final boolean PAID;
     private final String BANKNAME;
@@ -44,12 +38,11 @@ public class Receipt {
         StringBuilder sb = new StringBuilder();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         sb.append("==============================================================\n");
-        // 动态居中 "Receipt"
         String title = "Receipt";
-        int totalWidth = 78; // 行宽，与表格长度一致
-        int titleLength = title.length(); // "Receipt" 长度为 7
-        int padding = (totalWidth - titleLength) / 2; // 左侧空格数量
-        String centeredTitle = " ".repeat(padding) + title + "\n"; // 左侧填充空格
+        int totalWidth = 78; 
+        int titleLength = title.length(); 
+        int padding = (totalWidth - titleLength) / 2; 
+        String centeredTitle = " ".repeat(padding) + title + "\n"; 
         sb.append(centeredTitle);
         sb.append("==============================================================\n");
         sb.append(String.format("Order ID: %d\n", ORDER.getOrderId()));
@@ -70,14 +63,13 @@ public class Receipt {
         sb.append(String.format("%-34s: RM %-10.2f\n", "Total (Before Discount)", total));
         double customerDiscount = CUSTOMER.getDiscount();
         if (customerDiscount < 0 || customerDiscount > 1) {
-            customerDiscount = 0; // Fallback to no discount if ingetalid
+            customerDiscount = 0; 
         }
         double totalAfterCustomerDiscount = total * (1 - customerDiscount);
         sb.append(String.format("%-34s: %-10.1f%%\n", "Member Discount", customerDiscount * 100));
         sb.append(String.format("%-34s: RM %-10.2f\n", "Total (After Member Discount)", totalAfterCustomerDiscount));
 
         if (PAYMENTMETHOD.equals("online_banking")) {
-            //sb.append(String.format("%-30s: %-10s\n", "Bank", BANKNAME));
             sb.append(String.format("%-34s: %-10.1f%%\n", "Bank Discount", BANKDISCOUNT * 100));
             sb.append(String.format("%-34s: RM %-10.2f\n", "Grand Total (After Bank Discount)", 
                     totalAfterCustomerDiscount * (1 - BANKDISCOUNT)));
@@ -100,7 +92,6 @@ public class Receipt {
         return sb.toString();
     }
 
-    // Add getters for payment calculations
     public double getTotalAfterCustomerDiscount() {
         double total = ORDER.getTotal();
         double customerDiscount = CUSTOMER.getDiscount();

@@ -63,10 +63,8 @@ public abstract class Product implements Serializable {
         this.detail = detail;
     }
 
-    // New abstract method to get a special feature specific to the product type
     public abstract String getSpecialFeature();
 
-    // New abstract method to check if the product is high-performance
     public abstract boolean isHighPerformance();
 
     @Override

@@ -1,14 +1,7 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package gpusellingsystem;
 import java.time.LocalDate;
 import java.util.Map;
-/**
- *
- * @author chong
- */
+
 public class PODPayment extends PaymentMethod {
     @Override
     public PaymentResult processPayment(Order order, Customer customer, double paymentAmount, Map<String, String> details) {

@@ -1,23 +1,16 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package gpusellingsystem;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-/**
- *
- * @author chong
- */
+
 public class OnlineBankingPayment extends PaymentMethod {
-    private static final double MAYBANK_DISCOUNT = 0.03; // 3% 折扣
-    private static final double CIMB_DISCOUNT = 0.04; // 4% 折扣
-    private static final double PUBLIC_BANK_DISCOUNT = 0.05; // 5% 折扣
+    private static final double MAYBANK_DISCOUNT = 0.03; 
+    private static final double CIMB_DISCOUNT = 0.04;
+    private static final double PUBLIC_BANK_DISCOUNT = 0.05; 
 
     @Override
     public PaymentResult processPayment(Order order, Customer customer, double paymentAmount, Map<String, String> details) {
-        double expectedAmount = order.getTotal(); // Use raw total since discount is handled in Receipt
+        double expectedAmount = order.getTotal(); 
         if (Math.abs(paymentAmount - expectedAmount) > 0.01) {
             return new PaymentResult(false, String.format("Payment amount (RM %.2f) does not match order total (RM %.2f)!", 
                 paymentAmount, expectedAmount), null, 0.0);
@@ -35,7 +28,6 @@ public class OnlineBankingPayment extends PaymentMethod {
             return new PaymentResult(false, "Bank username or password cannot be empty!", null, 0.0);
         }
 
-        // Determine bank-specific discount
         double bankDiscount;
         switch (bankName) {
             case "Maybank":
@@ -48,14 +40,13 @@ public class OnlineBankingPayment extends PaymentMethod {
                 bankDiscount = PUBLIC_BANK_DISCOUNT;
                 break;
             default:
-                bankDiscount = 0.0; // Fallback, should not occur due to validation
+                bankDiscount = 0.0;
         }
 
         Receipt invoice = new Receipt(order, customer, "online_banking", true, bankName, bankUsername, null, null, null, bankDiscount);
         return new PaymentResult(true, "Online banking payment successful!", invoice, bankDiscount);
     }
 
-    // Extend PaymentResult to include bankDiscount
     public static class PaymentResult extends PaymentMethod.PaymentResult {
         private final double bankDiscount;
 

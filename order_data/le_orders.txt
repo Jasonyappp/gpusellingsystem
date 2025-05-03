@@ -1,2 +1,0 @@
-1002,le,2025-05-01,1800.00,Completed,online_banking,Maybank,jkl,0.03,,
-1003,le,2025-05-01,9000.00,Completed,online_banking,Maybank,rew,0.03,,
